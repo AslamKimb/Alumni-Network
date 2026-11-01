@@ -1,0 +1,3 @@
+{
+  "extends": "@Alumni-Network/config/tsconfig.base.json"
+}

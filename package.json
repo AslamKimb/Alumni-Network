@@ -1,0 +1,40 @@
+{
+  "name": "Alumni-Network",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "vp run -r dev",
+    "build": "vp run -r build",
+    "check-types": "vp run -r check-types",
+    "check": "vp check && vp run -r check-types",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "staged": "vp staged",
+    "hooks:setup": "vp config",
+    "dev:web": "vp run --filter web dev",
+    "dev:server": "vp run --filter server dev",
+    "db:push": "vp run --filter @Alumni-Network/db db:push",
+    "db:studio": "vp run --filter @Alumni-Network/db db:studio",
+    "db:generate": "vp run --filter @Alumni-Network/db db:generate",
+    "db:migrate": "vp run --filter @Alumni-Network/db db:migrate",
+    "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
+    "postinstall": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/server/ && varlock codegen --path ./packages/db/",
+    "auth:generate": "cd apps/server && pnpm run auth:generate"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@Alumni-Network/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "rolldown": "1.2.15",
+    "typescript": "catalog:",
+    "varlock": "catalog:",
+    "vite-plus": "1.4.0"
+  },
+  "packageManager": "pnpm@12.14.0"
+}
