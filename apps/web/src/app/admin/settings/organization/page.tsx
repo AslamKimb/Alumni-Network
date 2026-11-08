@@ -98,13 +98,6 @@ function OrganizationForm() {
     if (org.data && !values) setValues(org.data);
   }, [org.data, values]);
 
-  if (org.isPending) return <p className="mt-10 text-sm text-muted-foreground">Loading settings…</p>;
-  if (!values) return <p className="mt-10 text-sm text-destructive">Could not load settings.</p>;
-
-  const set = (field: keyof Values) => (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => setValues({ ...values, [field]: event.target.value });
-
   const save = useMutation(
     trpc.settings.saveOrganization.mutationOptions({
       onSuccess: (data) => {
@@ -116,6 +109,13 @@ function OrganizationForm() {
       onError: (error) => toast.error(error.message),
     }),
   );
+
+  if (org.isPending) return <p className="mt-10 text-sm text-muted-foreground">Loading settings…</p>;
+  if (!values) return <p className="mt-10 text-sm text-destructive">Could not load settings.</p>;
+
+  const set = (field: keyof Values) => (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => setValues((prev) => (prev ? { ...prev, [field]: event.target.value } : prev));
 
   const field = (
     id: string,

@@ -1,11 +1,12 @@
 "use client";
-import { hasPermission } from "@Alumni-Network/auth/permissions";
-import Link from "next/link";
+import { Button } from "@Alumni-Network/ui/components/button";
 import { useQuery } from "@tanstack/react-query";
+import { Menu, PanelLeft } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
-import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/utils/trpc";
 
 function monogram(shortName: string, name: string) {
@@ -15,55 +16,61 @@ function monogram(shortName: string, name: string) {
   return parts[0]?.slice(0, 2).toUpperCase() || "AN";
 }
 
-const signedInLinks = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/profile", label: "Profile" },
-  { to: "/events", label: "Events", module: "events" },
-  { to: "/settings/account", label: "Settings" },
-] as const;
-
-const adminLinks = [
-  { to: "/admin/alumni", label: "Alumni Records", module: "records" },
-  { to: "/admin/events", label: "Event management", module: "events" },
-] as const;
-
-export default function Header() {
+export default function Header({
+  onMenuClick,
+  collapsed,
+  onToggleCollapse,
+}: {
+  onMenuClick?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}) {
   const trpc = useTRPC();
-  const { data: session } = authClient.useSession();
   const org = useQuery(trpc.settings.getOrganization.queryOptions());
-  const flags = useQuery(trpc.settings.publicModuleFlags.queryOptions());
-  const eventsEnabled = flags.data?.events !== false;
-  const recordsEnabled = flags.data?.records !== false;
-  const reportsEnabled = flags.data?.reports !== false;
-  const visibleSignedIn = signedInLinks.filter(
-    (l) => !("module" in l) || (l.module === "events" ? eventsEnabled : true),
-  );
-  const visibleAdmin = adminLinks.filter((l) =>
-    l.module === "records" ? recordsEnabled : l.module === "events" ? eventsEnabled : true,
-  );
 
   const orgName = org.data?.name?.trim() || "Alumni Network";
   const shortName = org.data?.shortName?.trim() ?? "";
   const logoUrl = org.data?.logoUrl?.trim() ?? "";
-  const isAdmin = session?.user.role === "admin";
-  const isSignedIn = Boolean(session?.user);
-  const canManageEvents = Boolean(session?.user) && hasPermission(session!.user, "events:manage");
-  const canViewRecords = Boolean(session?.user) && hasPermission(session!.user, "records:view");
-  const canViewReports = Boolean(session?.user) && hasPermission(session!.user, "reports:view");
-
-  const linkClassName =
-    "rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+  const [logoError, setLogoError] = useState(false);
+  useEffect(() => setLogoError(false), [logoUrl]);
 
   return (
     <header className="shrink-0 border-b bg-card">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
-        <div className="flex min-w-0 items-center gap-6">
+        <div className="flex min-w-0 items-center gap-2">
+          {onMenuClick && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="md:hidden"
+              onClick={onMenuClick}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="size-5" />
+            </Button>
+          )}
+          {onToggleCollapse && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="hidden md:inline-flex"
+              onClick={onToggleCollapse}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!collapsed}
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <PanelLeft className="size-5" />
+            </Button>
+          )}
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            {logoUrl ? (
+            {logoUrl && !logoError ? (
               <img
                 src={logoUrl}
                 alt=""
                 className="grid size-8 shrink-0 place-items-center rounded-md object-cover"
+                onError={() => setLogoError(true)}
               />
             ) : (
               <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary font-heading text-sm font-bold text-primary-foreground">
@@ -74,43 +81,6 @@ export default function Header() {
               {orgName}
             </span>
           </Link>
-          <nav className="hidden items-center gap-1 sm:flex">
-            {!isSignedIn && (
-              <>
-                <Link href="/" className={linkClassName}>
-                  Home
-                </Link>
-                <Link href="/login?mode=signin" className={linkClassName}>
-                  Sign in
-                </Link>
-                <Link href="/login?mode=signup" className={linkClassName}>
-                  Sign up
-                </Link>
-              </>
-            )}
-            {isSignedIn &&
-              visibleSignedIn.map(({ to, label }) => (
-                <Link key={to} href={to} className={linkClassName}>
-                  {label}
-                </Link>
-              ))}
-            {isSignedIn &&
-              visibleAdmin.map(({ to, label }) => {
-                const allowed = to === "/admin/alumni" ? canViewRecords : canManageEvents;
-                if (!allowed) return null;
-                return (
-                  <Link key={to} href={to} className={linkClassName}>
-                    {label}
-                  </Link>
-                );
-              })}
-            {isSignedIn && canViewReports && reportsEnabled && (
-              /* Plain anchor: /admin/reports is not a typed route yet. */
-              <a href="/admin/reports" className={linkClassName}>
-                Reports
-              </a>
-            )}
-          </nav>
         </div>
         <div className="flex items-center gap-2">
           <ModeToggle />

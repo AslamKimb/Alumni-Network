@@ -56,6 +56,12 @@ export default function UserMenu() {
           )}
           {(session.user.role === "admin" ||
             hasPermission(session.user, "settings:manage")) && (
+            <DropdownMenuItem render={<Link href="/admin/settings/organization" />}>
+              Organization settings
+            </DropdownMenuItem>
+          )}
+          {(session.user.role === "admin" ||
+            hasPermission(session.user, "settings:manage")) && (
             <DropdownMenuItem render={<Link href="/admin/settings/auth" />}>
               Auth settings
             </DropdownMenuItem>

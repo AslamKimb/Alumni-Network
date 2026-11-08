@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Fira_Code, Plus_Jakarta_Sans } from "next/font/google";
 
 import "../index.css";
-import Header from "@/components/header";
+import AppShell from "@/components/app-shell";
 import Providers from "@/components/providers";
 
 const dmSans = DM_Sans({
@@ -37,10 +37,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${jakarta.variable} ${firaCode.variable} antialiased`}>
         <Providers>
-          <div className="flex min-h-svh flex-col">
-            <Header />
-            {children}
-          </div>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
