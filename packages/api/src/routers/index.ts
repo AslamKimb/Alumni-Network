@@ -1,12 +1,20 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
 import { accessRouter } from "./access";
+import { alumniRouter } from "./alumni";
+import { eventsRouter } from "./events";
 import { onboardingRouter } from "./onboarding";
+import { profileRouter } from "./profile";
+import { reportsRouter } from "./reports";
 import { settingsRouter } from "./settings";
 
 export const appRouter = router({
   access: accessRouter,
   onboarding: onboardingRouter,
   settings: settingsRouter,
+  profile: profileRouter,
+  events: eventsRouter,
+  alumni: alumniRouter,
+  reports: reportsRouter,
   healthCheck: publicProcedure.query(() => {
     return "OK";
   }),

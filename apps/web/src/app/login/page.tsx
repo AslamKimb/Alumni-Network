@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import { Card, CardContent } from "@Alumni-Network/ui/components/card";
 import { Skeleton } from "@Alumni-Network/ui/components/skeleton";
@@ -10,11 +11,12 @@ import SignInForm from "@/components/sign-in-form";
 import SignUpForm from "@/components/sign-up-form";
 import { useTRPC } from "@/utils/trpc";
 
-export default function LoginPage() {
+function LoginInner() {
   const trpc = useTRPC();
+  const searchParams = useSearchParams();
   const publicAuth = useQuery(trpc.settings.publicAuth.queryOptions());
   const signupsOpen = publicAuth.data?.signupsOpen ?? true;
-  const [showSignIn, setShowSignIn] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(() => searchParams.get("mode") === "signin");
   const signingIn = showSignIn || !signupsOpen;
 
   // Waiting beats guessing: a closed instance must never paint a sign-up form.
@@ -59,5 +61,13 @@ export default function LoginPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   );
 }

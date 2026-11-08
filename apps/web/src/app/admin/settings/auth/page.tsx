@@ -1,3 +1,4 @@
+import { hasPermission } from "@Alumni-Network/auth/permissions";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -17,7 +18,10 @@ export default async function AdminAuthSettingsPage() {
     redirect("/login");
   }
 
-  if (session.user.role !== "admin") {
+  if (
+    session.user.role !== "admin" &&
+    !hasPermission(session.user, "settings:manage")
+  ) {
     redirect("/dashboard");
   }
 

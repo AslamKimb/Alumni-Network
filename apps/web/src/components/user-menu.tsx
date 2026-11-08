@@ -1,3 +1,4 @@
+import { hasPermission } from "@Alumni-Network/auth/permissions";
 import { Button } from "@Alumni-Network/ui/components/button";
 import {
   DropdownMenu,
@@ -24,9 +25,14 @@ export default function UserMenu() {
 
   if (!session) {
     return (
-      <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>
-        Sign In
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" nativeButton={false} render={<Link href="/login?mode=signin" />}>
+          Sign In
+        </Button>
+        <Button nativeButton={false} render={<Link href="/login?mode=signup" />}>
+          Sign Up
+        </Button>
+      </div>
     );
   }
 
@@ -48,7 +54,8 @@ export default function UserMenu() {
               Manage access
             </DropdownMenuItem>
           )}
-          {session.user.role === "admin" && (
+          {(session.user.role === "admin" ||
+            hasPermission(session.user, "settings:manage")) && (
             <DropdownMenuItem render={<Link href="/admin/settings/auth" />}>
               Auth settings
             </DropdownMenuItem>

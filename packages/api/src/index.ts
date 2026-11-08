@@ -1,4 +1,6 @@
 import { user } from "@Alumni-Network/db/schema/auth";
+import { hasPermission } from "@Alumni-Network/auth/permissions";
+import type { PermissionKey } from "@Alumni-Network/auth/permissions";
 import { eq } from "drizzle-orm";
 import { initTRPC, TRPCError } from "@trpc/server";
 
@@ -13,6 +15,7 @@ export const publicProcedure = t.procedure;
 export type CurrentUser = {
   id: string;
   role: string;
+  permissions: string;
   deactivatedAt: Date | null;
 };
 
@@ -31,6 +34,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     .select({
       id: user.id,
       role: user.role,
+      permissions: user.permissions,
       deactivatedAt: user.deactivatedAt,
     })
     .from(user)
@@ -64,3 +68,15 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next();
 });
+
+export const permissionProcedure = (key: PermissionKey) =>
+  protectedProcedure.use(({ ctx, next }) => {
+    if (!hasPermission(ctx.currentUser, key)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `Missing permission: ${key}`,
+        cause: "Insufficient permission",
+      });
+    }
+    return next();
+  });

@@ -301,6 +301,9 @@ importers:
       '@Alumni-Network/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@Alumni-Network/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@Alumni-Network/ui':
         specifier: workspace:*
         version: link:../../packages/ui

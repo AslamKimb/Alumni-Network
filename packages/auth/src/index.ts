@@ -91,6 +91,12 @@ export function createAuth(
           required: false,
           input: false,
         },
+        permissions: {
+          type: "string",
+          required: false,
+          defaultValue: "[]",
+          input: false,
+        },
       },
       deleteUser: {
         enabled: true,

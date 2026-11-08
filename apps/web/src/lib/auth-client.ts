@@ -3,5 +3,5 @@ import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_SERVER_URL!,
-  plugins: [inferAdditionalFields({ user: { role: { type: "string", required: false } } })],
+  plugins: [inferAdditionalFields({ user: { role: { type: "string", required: false }, permissions: { type: "string", required: false } } })],
 });
