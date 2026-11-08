@@ -1,4 +1,5 @@
 import { Button } from "@Alumni-Network/ui/components/button";
+import { Checkbox } from "@Alumni-Network/ui/components/checkbox";
 import { Input } from "@Alumni-Network/ui/components/input";
 import { Label } from "@Alumni-Network/ui/components/label";
 import { useForm } from "@tanstack/react-form";
@@ -19,17 +20,21 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
       email: "",
       password: "",
       name: "",
+      consent: false,
     },
     onSubmit: async ({ value }) => {
+      // `consent` is a sign-up body extension read by the server hook, not a Better Auth user field.
+      const payload = {
+        email: value.email,
+        password: value.password,
+        name: value.name,
+        consent: value.consent,
+      };
       await authClient.signUp.email(
-        {
-          email: value.email,
-          password: value.password,
-          name: value.name,
-        },
+        payload as Parameters<typeof authClient.signUp.email>[0],
         {
           onSuccess: () => {
-            router.push("/dashboard");
+            router.push("/onboarding");
             toast.success("Sign up successful");
           },
           onError: (error) => {
@@ -40,9 +45,15 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
     },
     validators: {
       onSubmit: z.object({
-        name: z.string().min(2, "Name must be at least 2 characters"),
+        name: z
+          .string()
+          .min(2, "Name must be at least 2 characters")
+          .max(120, "Name must be at most 120 characters"),
         email: z.email("Invalid email address"),
         password: z.string().min(8, "Password must be at least 8 characters"),
+        consent: z
+          .boolean()
+          .refine((v) => v === true, "You must consent to storing your record"),
       }),
     },
   });
@@ -52,9 +63,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Create Account</h1>
-
+    <div className="w-full">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -66,8 +75,8 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
         <div>
           <form.Field name="name">
             {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Name</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor={field.name}>Full name</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -76,7 +85,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-destructive">
                     {error?.message}
                   </p>
                 ))}
@@ -88,7 +97,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
         <div>
           <form.Field name="email">
             {(field) => (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor={field.name}>Email</Label>
                 <Input
                   id={field.name}
@@ -99,7 +108,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-destructive">
                     {error?.message}
                   </p>
                 ))}
@@ -111,7 +120,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
         <div>
           <form.Field name="password">
             {(field) => (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor={field.name}>Password</Label>
                 <Input
                   id={field.name}
@@ -122,11 +131,41 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-destructive">
                     {error?.message}
                   </p>
                 ))}
               </div>
+            )}
+          </form.Field>
+        </div>
+
+        <div className="space-y-1.5">
+          <form.Field name="consent">
+            {(field) => (
+              <>
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id={field.name}
+                    checked={field.state.value}
+                    onCheckedChange={(checked) => field.handleChange(checked === true)}
+                  />
+                  <div className="space-y-0.5 leading-relaxed">
+                    <Label htmlFor={field.name} className="text-sm">
+                      I consent to storing my alumni record
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Your record is visible to administrators only, never to other
+                      alumni.
+                    </p>
+                  </div>
+                </div>
+                {field.state.meta.errors.map((error) => (
+                  <p key={error?.message} className="text-sm text-destructive">
+                    {error?.message}
+                  </p>
+                ))}
+              </>
             )}
           </form.Field>
         </div>
@@ -143,11 +182,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
       </form>
 
       <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignIn}
-          className="text-indigo-600 hover:text-indigo-800"
-        >
+        <Button variant="link" size="sm" onClick={onSwitchToSignIn}>
           Already have an account? Sign In
         </Button>
       </div>

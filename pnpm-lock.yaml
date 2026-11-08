@@ -395,6 +395,9 @@ importers:
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.22.1(typescript@6.0.3)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.5(@libsql/client@0.18.0)(bun-types@1.4.4)(zod@4.6.7)
       zod:
         specifier: 'catalog:'
         version: 4.6.7

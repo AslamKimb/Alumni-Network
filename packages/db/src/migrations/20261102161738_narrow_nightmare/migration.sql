@@ -1,0 +1,1 @@
+ALTER TABLE `alumnus_profile` ADD `consent_at` integer NOT NULL;

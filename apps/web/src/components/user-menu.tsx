@@ -19,27 +19,40 @@ export default function UserMenu() {
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
-    return <Skeleton className="h-9 w-24" />;
+    return <Skeleton className="h-10.5 w-24" />;
   }
 
   if (!session) {
     return (
-      <Link href="/login">
-        <Button variant="outline">Sign In</Button>
-      </Link>
+      <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>
+        Sign In
+      </Button>
     );
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" />}>
-        {session.user.name}
+        <span className="max-w-40 truncate">{session.user.name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/settings/account" />}>
+            Account settings
+          </DropdownMenuItem>
+          {session.user.role === "admin" && (
+            <DropdownMenuItem render={<Link href="/admin/access" />}>
+              Manage access
+            </DropdownMenuItem>
+          )}
+          {session.user.role === "admin" && (
+            <DropdownMenuItem render={<Link href="/admin/settings/auth" />}>
+              Auth settings
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             variant="destructive"
             onClick={() => {

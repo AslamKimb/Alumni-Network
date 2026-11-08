@@ -2,6 +2,7 @@ import { Button } from "@Alumni-Network/ui/components/button";
 import { Input } from "@Alumni-Network/ui/components/input";
 import { Label } from "@Alumni-Network/ui/components/label";
 import { useForm } from "@tanstack/react-form";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import z from "zod";
@@ -10,7 +11,7 @@ import { authClient } from "@/lib/auth-client";
 
 import Loader from "./loader";
 
-export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
+export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: () => void }) {
   const router = useRouter();
   const { isPending } = authClient.useSession();
 
@@ -49,9 +50,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
-
+    <div className="w-full">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -63,7 +62,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         <div>
           <form.Field name="email">
             {(field) => (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor={field.name}>Email</Label>
                 <Input
                   id={field.name}
@@ -74,7 +73,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-destructive">
                     {error?.message}
                   </p>
                 ))}
@@ -86,7 +85,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         <div>
           <form.Field name="password">
             {(field) => (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor={field.name}>Password</Label>
                 <Input
                   id={field.name}
@@ -97,7 +96,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-destructive">
                     {error?.message}
                   </p>
                 ))}
@@ -117,14 +116,15 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         </form.Subscribe>
       </form>
 
-      <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignUp}
-          className="text-indigo-600 hover:text-indigo-800"
-        >
-          Need an account? Sign Up
+      <div className="mt-4 flex flex-col items-center gap-1">
+        <Button variant="link" size="sm" nativeButton={false} render={<Link href="/forgot-password" />}>
+          Forgot password?
         </Button>
+        {onSwitchToSignUp && (
+          <Button variant="link" size="sm" onClick={onSwitchToSignUp}>
+            Need an account? Sign Up
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -1,48 +1,48 @@
-"use client";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@Alumni-Network/ui/components/button";
+import Link from "next/link";
 
-import { useTRPC } from "@/utils/trpc";
-
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
+const highlights = [
+  {
+    title: "Keep your record current",
+    body: "Update your campus years, location, work, and education from one profile.",
+  },
+  {
+    title: "Hear from your institution",
+    body: "Read events and updates published by the alumni office.",
+  },
+  {
+    title: "Private by design",
+    body: "Your record is visible to administrators only, never to other alumni.",
+  },
+];
 
 export default function Home() {
-  const trpc = useTRPC();
-  const healthCheck = useQuery(trpc.healthCheck.queryOptions());
-
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-2">
-      <pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-      <div className="grid gap-6">
-        <section className="rounded-lg border p-4">
-          <h2 className="mb-2 font-medium">API Status</h2>
-          <div className="flex items-center gap-2">
-            <div
-              className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
-            />
-            <span className="text-sm text-muted-foreground">
-              {healthCheck.isLoading
-                ? "Checking..."
-                : healthCheck.data
-                  ? "Connected"
-                  : "Disconnected"}
-            </span>
-          </div>
-        </section>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-16 md:px-6 md:py-24">
+      <div className="max-w-2xl">
+        <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
+          Alumni Network
+        </p>
+        <h1 className="mt-4 text-display">Your alumni record, in one place.</h1>
+        <p className="mt-6 max-w-xl text-lg/relaxed text-muted-foreground">
+          A private registry for your institution. Create an account, complete your profile, and
+          keep the alumni office up to date with where you are and what you do.
+        </p>
+        <div className="mt-8">
+          <Button size="lg" nativeButton={false} render={<Link href="/login" />}>
+            Create your account
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <ul className="mt-16 grid gap-6 border-t pt-10 sm:grid-cols-3">
+        {highlights.map(({ title, body }) => (
+          <li key={title}>
+            <h2 className="text-base font-semibold">{title}</h2>
+            <p className="mt-2 text-sm/relaxed text-muted-foreground">{body}</p>
+          </li>
+        ))}
+      </ul>
+    </main>
   );
 }
