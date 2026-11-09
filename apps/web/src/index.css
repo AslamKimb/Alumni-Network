@@ -1,1 +1,10 @@
 @import "@Alumni-Network/ui/globals.css";
+
+@layer base {
+  /* Safety net for the app shell: clip any stray horizontal overflow so
+     page scrollbars stay vertical-only at narrow widths. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+}

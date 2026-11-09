@@ -97,7 +97,7 @@ export default function AccountSettings() {
   return (
     <div className="mt-8 space-y-6">
       <section className="rounded-lg border bg-card p-6">
-        <h2 className="font-heading text-base font-medium">Email</h2>
+        <h2 className="font-heading text-xl font-semibold">Email</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           You sign in with {email || "your email address"}.
         </p>
@@ -123,7 +123,7 @@ export default function AccountSettings() {
       </section>
 
       <section className="rounded-lg border bg-card p-6">
-        <h2 className="font-heading text-base font-medium">Password</h2>
+        <h2 className="font-heading text-xl font-semibold">Password</h2>
         <form className="mt-4 space-y-3" onSubmit={submitPassword}>
           <div className="space-y-1.5">
             <Label htmlFor="current-password">Current password</Label>
@@ -156,7 +156,7 @@ export default function AccountSettings() {
       </section>
 
       <section className="rounded-lg border bg-card p-6">
-        <h2 className="font-heading text-base font-medium">Session</h2>
+        <h2 className="font-heading text-xl font-semibold">Session</h2>
         <Button
           className="mt-4"
           variant="outline"
@@ -176,7 +176,7 @@ export default function AccountSettings() {
       </section>
 
       <section className="rounded-lg border border-destructive/40 bg-card p-6">
-        <h2 className="font-heading text-base font-medium text-destructive">Delete account</h2>
+        <h2 className="font-heading text-xl font-semibold text-destructive">Delete account</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           This permanently deletes your account and your alumni record. Type {email} to confirm.
         </p>

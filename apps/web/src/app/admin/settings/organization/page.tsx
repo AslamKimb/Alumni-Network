@@ -111,7 +111,7 @@ function OrganizationForm() {
   );
 
   if (org.isPending) return <p className="mt-10 text-sm text-muted-foreground">Loading settings…</p>;
-  if (!values) return <p className="mt-10 text-sm text-destructive">Could not load settings.</p>;
+  if (!values) return <p className="mt-10 text-sm text-error-text">Could not load settings.</p>;
 
   const set = (field: keyof Values) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -128,7 +128,7 @@ function OrganizationForm() {
       <Label htmlFor={id}>{label}</Label>
       {control}
       {error ? (
-        <p className="text-xs text-destructive">{error}</p>
+        <p className="text-xs text-error-text">{error}</p>
       ) : helper ? (
         <p className="text-xs text-muted-foreground">{helper}</p>
       ) : null}

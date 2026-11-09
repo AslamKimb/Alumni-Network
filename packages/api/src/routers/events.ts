@@ -1,10 +1,12 @@
 import { appSetting } from "@Alumni-Network/db/schema/setting";
 import { event } from "@Alumni-Network/db/schema/event";
+import { announcement } from "@Alumni-Network/db/schema/announcement";
 import type { Database } from "@Alumni-Network/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import { z } from "zod";
 
+import { audienceCondition, getMyCohort, validateAudience } from "../cohorts-helper";
 import { permissionProcedure, protectedProcedure, router } from "../index";
 
 const CATEGORIES = ["event", "update"] as const;
@@ -51,6 +53,8 @@ const eventFields = (forPublish: boolean) =>
       .refine((v) => httpsUrl(v), "Cover image must be an HTTPS URL")
       .optional()
       .nullable(),
+    relatedAnnouncementId: z.string().trim().min(1).optional().nullable(),
+    audience: z.string().default("all"),
   });
 
 const shape = (input: {
@@ -103,6 +107,19 @@ function occurrenceDates(startsAt: Date, freq: string, interval: number, end: Da
     cur = next;
   }
   return dates;
+}
+
+async function requireAnnouncementExists(
+  db: Database,
+  relatedAnnouncementId: string | null | undefined,
+) {
+  if (relatedAnnouncementId == null) return;
+  const [row] = await db
+    .select({ id: announcement.id })
+    .from(announcement)
+    .where(eq(announcement.id, relatedAnnouncementId))
+    .limit(1);
+  if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Announcement not found" });
 }
 
 async function requirePublishable(db: Database, id: string) {
@@ -168,6 +185,8 @@ export const eventsRouter = router({
 
   create: permissionProcedure("events:manage").input(eventFields(false)).mutation(async ({ ctx, input }) => {
     shape(input);
+    await validateAudience(ctx.db, input.audience);
+    await requireAnnouncementExists(ctx.db, input.relatedAnnouncementId);
     const [row] = await ctx.db
       .insert(event)
       .values({
@@ -180,7 +199,9 @@ export const eventsRouter = router({
         location: input.location ?? null,
         isOnline: input.isOnline,
         coverImageUrl: input.coverImageUrl || null,
+        relatedAnnouncementId: input.relatedAnnouncementId ?? null,
         status: "draft",
+        audience: input.audience,
         createdBy: ctx.currentUser.id,
       })
       .returning();
@@ -200,6 +221,8 @@ export const eventsRouter = router({
         .limit(1);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
 
+      await validateAudience(ctx.db, values.audience);
+      await requireAnnouncementExists(ctx.db, values.relatedAnnouncementId);
       const merged = {
         title: values.title,
         summary: values.summary === undefined ? existing.summary : (values.summary ?? ""),
@@ -209,10 +232,15 @@ export const eventsRouter = router({
         endsAt: values.endsAt === undefined ? existing.endsAt : (values.endsAt ?? null),
         location: values.location === undefined ? existing.location : (values.location ?? null),
         isOnline: values.isOnline,
+        audience: values.audience,
         coverImageUrl:
           values.coverImageUrl === undefined
             ? existing.coverImageUrl
             : (values.coverImageUrl || null),
+        relatedAnnouncementId:
+          values.relatedAnnouncementId === undefined
+            ? existing.relatedAnnouncementId
+            : (values.relatedAnnouncementId ?? null),
       };
 
       if (existing.status === "published") {
@@ -246,7 +274,9 @@ export const eventsRouter = router({
           endsAt: merged.endsAt,
           location: merged.location,
           isOnline: merged.isOnline,
+          audience: merged.audience,
           coverImageUrl: merged.coverImageUrl,
+          relatedAnnouncementId: merged.relatedAnnouncementId,
           updatedAt: new Date(),
         })
         .where(eq(event.id, id))
@@ -307,8 +337,12 @@ export const eventsRouter = router({
     const { moduleEnabled, showPastEvents } = await readEventSettings(ctx.db);
     if (!moduleEnabled) return { upcoming: [], past: [], showPastEvents };
 
+    const myCohort = await getMyCohort(ctx.db, ctx.currentUser.id);
     const now = new Date();
-    const base = eq(event.status, "published");
+    const base = and(
+      eq(event.status, "published"),
+      audienceCondition(event.audience, myCohort?.id ?? null),
+    );
 
     const upcoming = await ctx.db
       .select()
@@ -334,10 +368,17 @@ export const eventsRouter = router({
       if (!moduleEnabled) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
       }
+      const myCohort = await getMyCohort(ctx.db, ctx.currentUser.id);
       const [row] = await ctx.db
         .select()
         .from(event)
-        .where(and(eq(event.id, input.id), eq(event.status, "published")))
+        .where(
+          and(
+            eq(event.id, input.id),
+            eq(event.status, "published"),
+            audienceCondition(event.audience, myCohort?.id ?? null),
+          ),
+        )
         .limit(1);
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
       return row;
@@ -361,6 +402,8 @@ export const eventsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       shape(input);
+      await validateAudience(ctx.db, input.audience);
+      await requireAnnouncementExists(ctx.db, input.relatedAnnouncementId);
       if (!input.startsAt) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Start date is required for series" });
       }
@@ -396,7 +439,9 @@ export const eventsRouter = router({
           location: input.location ?? null,
           isOnline: input.isOnline,
           coverImageUrl: input.coverImageUrl || null,
+          relatedAnnouncementId: input.relatedAnnouncementId ?? null,
           status: "draft",
+          audience: input.audience,
           createdBy: ctx.currentUser.id,
           seriesId: null,
           recurrenceFreq: input.recurrenceFreq,
@@ -406,6 +451,7 @@ export const eventsRouter = router({
         })
         .returning();
       if (!root) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create series" });
+      // Only the root carries relatedAnnouncementId; instances leave it null.
       const duration =
         root.startsAt && root.endsAt ? root.endsAt.getTime() - root.startsAt.getTime() : null;
       const instanceRows: typeof event.$inferSelect[] = [];
@@ -423,7 +469,9 @@ export const eventsRouter = router({
             location: root.location,
             isOnline: root.isOnline,
             coverImageUrl: root.coverImageUrl,
+            relatedAnnouncementId: null,
             status: "draft",
+            audience: root.audience,
             createdBy: ctx.currentUser.id,
             seriesId: root.id,
           })
@@ -449,8 +497,10 @@ export const eventsRouter = router({
     .query(async ({ ctx, input }) => {
       const { moduleEnabled, showPastEvents } = await readEventSettings(ctx.db);
       if (!moduleEnabled) return [];
+      const myCohort = await getMyCohort(ctx.db, ctx.currentUser.id);
       const conditions = [
         eq(event.status, "published"),
+        audienceCondition(event.audience, myCohort?.id ?? null),
         gte(event.startsAt, input.from),
         lte(event.startsAt, input.to),
       ];

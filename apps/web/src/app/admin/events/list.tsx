@@ -16,6 +16,7 @@ export default function AdminEventsList() {
   const [status, setStatus] = useState<"draft" | "published" | "">("");
   const [category, setCategory] = useState<"event" | "update" | "">("");
 
+  const cohorts = useQuery(trpc.cohorts.list.queryOptions());
   const flags = useQuery(trpc.settings.publicModuleFlags.queryOptions());
   const list = useQuery({
     ...trpc.events.listAdmin.queryOptions({
@@ -52,12 +53,12 @@ export default function AdminEventsList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Title or summary"
-            className="h-10 rounded-md border px-3"
+            className="h-10 w-full min-w-0 rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Status</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="h-10 rounded-md border px-2">
+          <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="h-10 w-full min-w-0 rounded-md border px-2 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10">
             <option value="">All</option>
             <option value="draft">Draft</option>
             <option value="published">Published</option>
@@ -65,7 +66,7 @@ export default function AdminEventsList() {
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Category</span>
-          <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="h-10 rounded-md border px-2">
+          <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="h-10 w-full min-w-0 rounded-md border px-2 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10">
             <option value="">All</option>
             <option value="event">Event</option>
             <option value="update">Update</option>
@@ -81,15 +82,16 @@ export default function AdminEventsList() {
       ) : !list.data || list.data.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">No events match these filters.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border">
+        <div className="mt-6 max-w-full overflow-x-auto rounded-lg border">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/60">
               <tr>
-                <th className="px-4 py-2 font-medium">Title</th>
-                <th className="px-4 py-2 font-medium">Category</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium">Start</th>
-                <th className="px-4 py-2 font-medium">Actions</th>
+                <th scope="col" className="px-4 py-2 font-medium">Title</th>
+                <th scope="col" className="px-4 py-2 font-medium">Category</th>
+                <th scope="col" className="px-4 py-2 font-medium">Status</th>
+                <th scope="col" className="px-4 py-2 font-medium">Audience</th>
+                <th scope="col" className="px-4 py-2 font-medium">Start</th>
+                <th scope="col" className="px-4 py-2 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -102,6 +104,11 @@ export default function AdminEventsList() {
                   </td>
                   <td className="px-4 py-2">{item.category}</td>
                   <td className="px-4 py-2">{item.status}</td>
+                  <td className="px-4 py-2">
+                    {item.audience === "all" || !item.audience
+                      ? "All"
+                      : `Cohort: ${cohorts.data?.find((c) => c.id === item.audience)?.name ?? item.audience}`}
+                  </td>
                   <td className="px-4 py-2">
                     {item.startsAt ? new Date(item.startsAt).toLocaleDateString() : "—"}
                   </td>

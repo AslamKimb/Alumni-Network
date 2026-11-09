@@ -10,6 +10,8 @@ export type EventFormValues = {
   location: string;
   isOnline: boolean;
   coverImageUrl: string;
+  audience: string;
+  relatedAnnouncementId: string;
 };
 
 // Live preview of the event as alumni will see it. The body goes through the
@@ -31,7 +33,7 @@ export function EventPreview({ values }: { values: EventFormValues }) {
         {values.isOnline ? "Online" : (values.location || "Online")}
       </p>
       {values.summary && <p className="mt-3 text-sm text-muted-foreground">{values.summary}</p>}
-      <div className="mt-4 space-y-4 text-sm">{values.body ? renderMarkdown(values.body) : <p className="text-muted-foreground">Body is empty.</p>}</div>
+      <div className="mt-4 space-y-4 text-sm break-words">{values.body ? renderMarkdown(values.body) : <p className="text-muted-foreground">Body is empty.</p>}</div>
     </div>
   );
 }
@@ -47,6 +49,8 @@ export function toInput(values: EventFormValues) {
     location: values.location || undefined,
     isOnline: values.isOnline,
     coverImageUrl: values.coverImageUrl || undefined,
+    audience: values.audience || "all",
+    relatedAnnouncementId: values.relatedAnnouncementId || null,
   };
 }
 
@@ -60,4 +64,6 @@ export const emptyValues: EventFormValues = {
   location: "",
   isOnline: false,
   coverImageUrl: "",
+  audience: "all",
+  relatedAnnouncementId: "",
 };

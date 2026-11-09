@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { AudienceBadge, CohortCard } from "@/components/cohorts";
+import { ShareButtons, absoluteUrl } from "@/components/share-buttons";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/utils/trpc";
 
@@ -17,12 +19,22 @@ function fmtDate(value: Date | string | null | undefined) {
   });
 }
 
+function CoverImg({ src }: { src: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className="aspect-[16/9] w-full rounded-md object-cover" onError={() => setBroken(true)} />
+  );
+}
+
 export default function AnnouncementsPage() {
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const published = useQuery(trpc.announcements.listPublished.queryOptions());
+  const myCohort = useQuery(trpc.cohorts.getMyCohort.queryOptions());
 
   const markRead = useMutation(
     trpc.announcements.markRead.mutationOptions({
@@ -58,10 +70,11 @@ export default function AnnouncementsPage() {
       <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
         Alumni Network
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">Announcements</h1>
+      <h1 className="mt-2">Announcements</h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
         News and updates from the alumni office.
       </p>
+      <CohortCard />
 
       {published.isPending ? (
         <p className="mt-8 text-sm text-muted-foreground">Loading…</p>
@@ -70,16 +83,31 @@ export default function AnnouncementsPage() {
       ) : published.data.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">No announcements yet.</p>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {published.data.map((item) => (
-            <Link
-              key={item.id}
-              href={`/announcements/${item.id}`}
-              className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60"
-            >
-              <h3 className="text-base font-semibold">{item.title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{fmtDate(item.publishedAt)}</p>
-            </Link>
+            <div key={item.id} className="rounded-lg border bg-card p-4">
+              <Link
+                href={`/announcements/${item.id}`}
+                className="block transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {item.coverImageUrl && <CoverImg src={item.coverImageUrl} />}
+                <h3 className="mt-2 break-words text-base font-semibold">{item.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{fmtDate(item.publishedAt)}</p>
+                <div className="mt-2">
+                  <AudienceBadge
+                    audience={item.audience}
+                    myCohortId={myCohort.data?.cohort?.id ?? null}
+                    myCohortName={myCohort.data?.cohort?.name ?? null}
+                  />
+                </div>
+                {item.body && (
+                  <p className="mt-2 line-clamp-3 break-words text-sm text-muted-foreground">{item.body}</p>
+                )}
+              </Link>
+              <div className="mt-3">
+                <ShareButtons url={absoluteUrl(`/announcements/${item.id}`)} title={item.title} />
+              </div>
+            </div>
           ))}
         </div>
       )}

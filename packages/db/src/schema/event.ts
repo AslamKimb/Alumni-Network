@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+import { announcement } from "./announcement";
 import { user } from "./auth";
 
 // Deviation from PRODUCT §5: `starts_at` is nullable here (spec says NOT NULL)
@@ -18,7 +19,11 @@ export const event = sqliteTable(
     location: text("location"),
     isOnline: integer("is_online", { mode: "boolean" }).notNull().default(false),
     coverImageUrl: text("cover_image_url"),
+    relatedAnnouncementId: text("related_announcement_id").references((): any => announcement.id, {
+      onDelete: "set null",
+    }),
     status: text("status").notNull(),
+    audience: text("audience").notNull().default("all"),
     publishedAt: integer("published_at", { mode: "timestamp_ms" }),
     seriesId: text("series_id"),
     recurrenceFreq: text("recurrence_freq"),

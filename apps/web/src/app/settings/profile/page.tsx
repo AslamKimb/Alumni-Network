@@ -149,16 +149,22 @@ export default function ProfileSettingsPage() {
     setHydrated(true);
   }, [profileQuery.data, hydrated]);
 
+  if (profileQuery.isError) {
+    return <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 md:px-6"><p className="text-sm text-destructive">We could not load your profile. Refresh to try again.</p></main>;
+  }
+  if (profileQuery.data && !profileQuery.data.profile) {
+    return (
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 md:px-6">
+        <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">Settings</p>
+        <h1 className="mt-2">Profile</h1>
+        <p className="mt-3 text-sm text-muted-foreground">You have no alumni record yet. Finish onboarding first.</p>
+      </main>
+    );
+  }
   if (sessionPending || profileQuery.isPending || !hydrated) {
     return <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 md:px-6"><p className="text-sm text-muted-foreground">Loading your profile…</p></main>;
   }
   if (!session?.user) return null;
-  if (profileQuery.isError) {
-    return <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 md:px-6"><p className="text-sm text-destructive">We could not load your profile. Refresh to try again.</p></main>;
-  }
-  if (!profileQuery.data?.profile) {
-    return <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 md:px-6"><p className="text-sm text-muted-foreground">You have no alumni record yet. Finish onboarding first.</p></main>;
-  }
 
   const titleRequired = workStatus === "employed" || workStatus === "self_employed";
 
@@ -218,7 +224,7 @@ export default function ProfileSettingsPage() {
 
       <div className="mt-8 space-y-6">
         <section className="space-y-5 rounded-lg border bg-card p-6">
-          <h2 className="font-heading text-base font-medium">Identity and campus</h2>
+          <h2 className="font-heading text-xl font-semibold">Identity and campus</h2>
           <div className="space-y-1.5">
             <Label htmlFor="fullName">Full name</Label>
             <Input id="fullName" value={fullName} maxLength={120} aria-invalid={!!errors.fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -232,13 +238,13 @@ export default function ProfileSettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="campusStartYear">Campus start year</Label>
-              <select id="campusStartYear" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={campusStartYear} onChange={(e) => setCampusStartYear(Number(e.target.value))}>
+              <select id="campusStartYear" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={campusStartYear} onChange={(e) => setCampusStartYear(Number(e.target.value))}>
                 {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="campusEndYear">Campus end year</Label>
-              <select id="campusEndYear" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={campusEndYear} onChange={(e) => setCampusEndYear(Number(e.target.value))}>
+              <select id="campusEndYear" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={campusEndYear} onChange={(e) => setCampusEndYear(Number(e.target.value))}>
                 {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
               {errors.campusEndYear && <p className="text-xs text-destructive">{errors.campusEndYear}</p>}
@@ -247,7 +253,7 @@ export default function ProfileSettingsPage() {
         </section>
 
         <section className="space-y-5 rounded-lg border bg-card p-6">
-          <h2 className="font-heading text-base font-medium">Location and work</h2>
+          <h2 className="font-heading text-xl font-semibold">Location and work</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="countryCode">Country</Label>
@@ -273,7 +279,7 @@ export default function ProfileSettingsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="workStatus">Work status</Label>
-              <select id="workStatus" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={workStatus} onChange={(e) => setWorkStatus(e.target.value as typeof workStatus)}>
+              <select id="workStatus" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={workStatus} onChange={(e) => setWorkStatus(e.target.value as typeof workStatus)}>
                 <option value="">Select work status</option>
                 {WORK_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
@@ -302,24 +308,24 @@ export default function ProfileSettingsPage() {
 
         <section className="space-y-3 rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-heading text-base font-medium">Duties</h2>
+            <h2 className="font-heading text-xl font-semibold">Duties</h2>
             <Button type="button" size="sm" variant="outline" disabled={duties.length >= 10} onClick={() => setDuties([...duties, { ...emptyDuty }])}>Add duty</Button>
           </div>
           {duties.length === 0 && <p className="text-sm text-muted-foreground">No duties recorded.</p>}
           {duties.map((entry, index) => (
             <div key={index} className="space-y-3 rounded-lg border p-4">
               <div className="grid gap-3 sm:grid-cols-3">
-                <select aria-label={`Duty ${index + 1} type`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={entry.type} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, type: e.target.value as DutyEntry["type"] } : item))}>
+                <select aria-label={`Duty ${index + 1} type`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={entry.type} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, type: e.target.value as DutyEntry["type"] } : item))}>
                   {DUTY_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
                 <Input aria-label={`Duty ${index + 1} title`} placeholder="Title" value={entry.title} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, title: e.target.value } : item))} />
                 <Input aria-label={`Duty ${index + 1} organization`} placeholder="Organization" value={entry.organization} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, organization: e.target.value } : item))} />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <select aria-label={`Duty ${index + 1} start year`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={entry.startYear} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, startYear: Number(e.target.value) } : item))}>
+                <select aria-label={`Duty ${index + 1} start year`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={entry.startYear} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, startYear: Number(e.target.value) } : item))}>
                   {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
-                <select aria-label={`Duty ${index + 1} end year`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={entry.endYear ?? ""} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, endYear: e.target.value === "" ? null : Number(e.target.value) } : item))}>
+                <select aria-label={`Duty ${index + 1} end year`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={entry.endYear ?? ""} onChange={(e) => setDuties(duties.map((item, i) => i === index ? { ...item, endYear: e.target.value === "" ? null : Number(e.target.value) } : item))}>
                   <option value="">Ongoing</option>
                   {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
@@ -334,19 +340,19 @@ export default function ProfileSettingsPage() {
 
         <section className="space-y-3 rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-heading text-base font-medium">Education</h2>
+            <h2 className="font-heading text-xl font-semibold">Education</h2>
             <Button type="button" size="sm" variant="outline" disabled={education.length >= 10} onClick={() => setEducation([...education, { ...emptyEducation }])}>Add education</Button>
           </div>
           {education.length === 0 && <p className="text-sm text-muted-foreground">No education recorded.</p>}
           {education.map((entry, index) => (
             <div key={index} className="space-y-3 rounded-lg border p-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <select aria-label={`Education ${index + 1} level`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={entry.level} onChange={(e) => setEducation(education.map((item, i) => i === index ? { ...item, level: e.target.value as EducationEntry["level"] } : item))}>
+                <select aria-label={`Education ${index + 1} level`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={entry.level} onChange={(e) => setEducation(education.map((item, i) => i === index ? { ...item, level: e.target.value as EducationEntry["level"] } : item))}>
                   {EDUCATION_LEVELS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
                 <Input aria-label={`Education ${index + 1} program`} placeholder="Program" value={entry.program} onChange={(e) => setEducation(education.map((item, i) => i === index ? { ...item, program: e.target.value } : item))} />
                 <Input aria-label={`Education ${index + 1} institution`} placeholder="Institution" value={entry.institution} onChange={(e) => setEducation(education.map((item, i) => i === index ? { ...item, institution: e.target.value } : item))} />
-                <select aria-label={`Education ${index + 1} year completed`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={entry.yearCompleted} onChange={(e) => setEducation(education.map((item, i) => i === index ? { ...item, yearCompleted: Number(e.target.value) } : item))}>
+                <select aria-label={`Education ${index + 1} year completed`} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 focus-visible:outline-none" value={entry.yearCompleted} onChange={(e) => setEducation(education.map((item, i) => i === index ? { ...item, yearCompleted: Number(e.target.value) } : item))}>
                   {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>

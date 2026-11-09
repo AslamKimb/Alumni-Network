@@ -156,7 +156,7 @@ export default function Access() {
           <label className="block sm:col-span-2 lg:col-span-2">
             <span className="mb-1 block text-sm font-medium">Search</span>
             <input
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               placeholder="Name or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -165,7 +165,7 @@ export default function Access() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Role</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={role}
               onChange={(e) => setRole(e.target.value as typeof role)}
             >
@@ -177,7 +177,7 @@ export default function Access() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Status</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value as typeof status)}
             >
@@ -193,7 +193,7 @@ export default function Access() {
       </div>
 
       {list.isError ? (
-        <p className="mt-8 text-sm text-destructive">Could not load accounts.</p>
+        <p className="mt-8 text-sm text-error-text">Could not load accounts.</p>
       ) : (
         <>
           {/* Desktop table */}
@@ -201,11 +201,11 @@ export default function Access() {
             <table className="w-full text-left text-sm">
               <thead className="border-b">
                 <tr>
-                  <th className="px-4 py-3 font-medium">User</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Permissions</th>
-                  <th className="px-4 py-3 font-medium" />
+                  <th scope="col" className="px-4 py-3 font-medium">User</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Role</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Permissions</th>
+                  <th scope="col" className="px-4 py-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -311,7 +311,7 @@ export default function Access() {
         <div className="fixed inset-0 z-50 flex justify-end">
           <button
             aria-label="Close"
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
             onClick={() => setSelected(null)}
           />
           <div
@@ -327,7 +327,7 @@ export default function Access() {
                 </h2>
                 <p className="truncate text-sm text-muted-foreground">{liveSelected.email}</p>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
+              <Button size="sm" variant="ghost" autoFocus onClick={() => setSelected(null)}>
                 Close
               </Button>
             </div>

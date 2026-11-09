@@ -29,7 +29,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
       <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
         Admin
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">Edit event</h1>
+      <h1 className="mt-2">Edit event</h1>
 
       <EditEventForm id={id} />
     </main>

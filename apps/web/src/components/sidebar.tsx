@@ -38,20 +38,22 @@ function NavList({
   links,
   pathname,
   collapsed = false,
+  onNavigate,
 }: {
   links: NavLink[];
   pathname: string;
   collapsed?: boolean;
+  onNavigate?: () => void;
 }) {
   const base =
-    "flex items-center rounded-md py-2 text-sm transition-colors hover:bg-muted hover:text-foreground";
+    "flex items-center rounded-md py-2 text-sm outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50";
   return (
     <ul className="space-y-1">
       {links.map(({ to, label, plain, icon: Icon }) => {
         const active = isActive(pathname, to);
         const className = cn(
           base,
-          collapsed ? "justify-center px-2" : "px-3",
+          collapsed ? "justify-center px-2" : "gap-3 px-3",
           active
             ? "bg-muted font-medium text-foreground"
             : "text-muted-foreground",
@@ -72,6 +74,7 @@ function NavList({
                 aria-label={label}
                 title={collapsed ? label : undefined}
                 className={className}
+                onClick={onNavigate}
               >
                 {body}
               </a>
@@ -86,6 +89,7 @@ function NavList({
               aria-label={label}
               title={collapsed ? label : undefined}
               className={className}
+              onClick={onNavigate}
             >
               {body}
             </Link>
@@ -159,13 +163,18 @@ export default function Sidebar({
       : []),
   ];
 
-  const renderNavBody = (isCollapsed: boolean) => (
+  const renderNavBody = (isCollapsed: boolean, onNavigate?: () => void) => (
     <nav
       aria-label="Primary"
       className={cn("space-y-6", isCollapsed ? "p-2" : "p-4")}
     >
       <div>
-        <NavList links={mainLinks} pathname={pathname} collapsed={isCollapsed} />
+        <NavList
+          links={mainLinks}
+          pathname={pathname}
+          collapsed={isCollapsed}
+          onNavigate={onNavigate}
+        />
       </div>
       {adminLinks.length > 0 && (
         <div>
@@ -177,7 +186,12 @@ export default function Sidebar({
           >
             {isCollapsed ? "···" : "Admin"}
           </p>
-          <NavList links={adminLinks} pathname={pathname} collapsed={isCollapsed} />
+          <NavList
+            links={adminLinks}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
         </div>
       )}
     </nav>
@@ -187,22 +201,22 @@ export default function Sidebar({
     <>
       <aside
         className={cn(
-          "hidden shrink-0 border-r bg-card md:block",
+          "sticky top-16 hidden h-[calc(100dvh-4rem)] shrink-0 self-start overflow-y-auto border-r bg-card transition-[width] duration-200 md:block",
           collapsed ? "w-16" : "w-64",
         )}
       >
-        <div className="sticky top-0">{renderNavBody(collapsed)}</div>
+        {renderNavBody(collapsed)}
       </aside>
       {open && (
         <div className="fixed inset-0 z-40 md:hidden">
           <button
             type="button"
             aria-label="Close menu"
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50 outline-none focus-visible:bg-black/60"
             onClick={onClose}
           />
           <aside className="absolute inset-y-0 left-0 w-64 max-w-[80vw] overflow-y-auto border-r bg-card">
-            {renderNavBody(false)}
+            {renderNavBody(false, onClose)}
           </aside>
         </div>
       )}

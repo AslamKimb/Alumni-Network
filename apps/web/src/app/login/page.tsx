@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { Card, CardContent } from "@Alumni-Network/ui/components/card";
 import { Skeleton } from "@Alumni-Network/ui/components/skeleton";
@@ -17,6 +17,13 @@ function LoginInner() {
   const publicAuth = useQuery(trpc.settings.publicAuth.queryOptions());
   const signupsOpen = publicAuth.data?.signupsOpen ?? true;
   const [showSignIn, setShowSignIn] = useState(() => searchParams.get("mode") === "signin");
+
+  // Keep the visible form in sync when navigating between
+  // /login?mode=signin and /login?mode=signup without a remount.
+  useEffect(() => {
+    setShowSignIn(searchParams.get("mode") === "signin");
+  }, [searchParams]);
+
   const signingIn = showSignIn || !signupsOpen;
 
   // Waiting beats guessing: a closed instance must never paint a sign-up form.

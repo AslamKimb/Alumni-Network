@@ -22,6 +22,7 @@ type Filters = {
   workStatus: string;
   educationLevel: string;
   dutyType: string;
+  cohortId: string;
 };
 
 const emptyFilters: Filters = {
@@ -32,6 +33,7 @@ const emptyFilters: Filters = {
   workStatus: "",
   educationLevel: "",
   dutyType: "",
+  cohortId: "",
 };
 
 function toNumberOrNull(value: string) {
@@ -42,7 +44,7 @@ function toNumberOrNull(value: string) {
 }
 
 function chipClassName(tone: "ok" | "warn" | "muted") {
-  if (tone === "warn") return "bg-warning/15 text-warning";
+  if (tone === "warn") return "bg-warning/15 text-warning-foreground";
   if (tone === "muted") return "bg-muted text-muted-foreground";
   return "bg-highlight/10 text-highlight";
 }
@@ -68,7 +70,9 @@ export default function AdminAlumniPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, sort, status, filters.country, filters.campusFrom, filters.campusTo, filters.workStatus, filters.educationLevel, filters.dutyType]);
+  }, [debouncedSearch, sort, status, filters.country, filters.campusFrom, filters.campusTo, filters.workStatus, filters.educationLevel, filters.dutyType, filters.cohortId]);
+
+  const cohorts = useQuery(trpc.cohorts.list.queryOptions());
 
   const queryInput = useMemo(
     () => ({
@@ -76,6 +80,7 @@ export default function AdminAlumniPage() {
       country: filters.country || null,
       campusFrom: toNumberOrNull(filters.campusFrom),
       campusTo: toNumberOrNull(filters.campusTo),
+      cohortId: (filters.cohortId || null) as string | null,
       workStatus: (filters.workStatus || null) as "employed" | "self_employed" | "student" | "unemployed" | "retired" | "other" | null,
       educationLevel: (filters.educationLevel || null) as "secondary" | "certificate" | "diploma" | "bachelor" | "master" | "doctorate" | "other" | null,
       dutyType: (filters.dutyType || null) as "religious" | "political" | "other" | null,
@@ -166,7 +171,7 @@ export default function AdminAlumniPage() {
           <label className="block sm:col-span-2 lg:col-span-4">
             <span className="mb-1 block text-sm font-medium">Search</span>
             <input
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               placeholder="Name, email, city, employer, title…"
               value={filters.search}
               onChange={(e) => set({ search: e.target.value })}
@@ -175,7 +180,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Country (ISO code)</span>
             <input
-              className="h-10 w-full rounded-md border px-3 text-sm uppercase"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm uppercase"
               placeholder="e.g. GB"
               maxLength={2}
               value={filters.country}
@@ -185,7 +190,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Campus from</span>
             <input
-              className="h-10 w-full rounded-md border px-3 text-sm font-mono"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm font-mono"
               placeholder="2018"
               inputMode="numeric"
               value={filters.campusFrom}
@@ -195,7 +200,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Campus to</span>
             <input
-              className="h-10 w-full rounded-md border px-3 text-sm font-mono"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm font-mono"
               placeholder="2022"
               inputMode="numeric"
               value={filters.campusTo}
@@ -205,7 +210,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Work status</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={filters.workStatus}
               onChange={(e) => set({ workStatus: e.target.value })}
             >
@@ -221,7 +226,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Education level</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={filters.educationLevel}
               onChange={(e) => set({ educationLevel: e.target.value })}
             >
@@ -238,7 +243,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Duty type</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={filters.dutyType}
               onChange={(e) => set({ dutyType: e.target.value })}
             >
@@ -249,9 +254,25 @@ export default function AdminAlumniPage() {
             </select>
           </label>
           <label className="block">
+            <span className="mb-1 block text-sm font-medium">Cohort</span>
+            <select
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
+              value={filters.cohortId}
+              onChange={(e) => set({ cohortId: e.target.value })}
+            >
+              <option value="">All</option>
+              {(cohorts.data ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+              <option value="unassigned">Unassigned</option>
+            </select>
+          </label>
+          <label className="block">
             <span className="mb-1 block text-sm font-medium">Status</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value as typeof status)}
             >
@@ -264,7 +285,7 @@ export default function AdminAlumniPage() {
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Sort by</span>
             <select
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm"
               value={sort}
               onChange={(e) => setSort(e.target.value as typeof sort)}
             >
@@ -280,7 +301,7 @@ export default function AdminAlumniPage() {
       </div>
 
       {list.isError ? (
-        <p className="mt-8 text-sm text-destructive">Could not load records.</p>
+        <p className="mt-8 text-sm text-error-text">Could not load records.</p>
       ) : (
         <>
           {/* Desktop table */}
@@ -288,13 +309,14 @@ export default function AdminAlumniPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Campus years</th>
-                  <th className="px-4 py-3 font-medium">Location</th>
-                  <th className="px-4 py-3 font-medium">Work status</th>
-                  <th className="px-4 py-3 font-medium">Title</th>
-                  <th className="px-4 py-3 font-medium">Updated</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Name</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Campus years</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Cohort</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Location</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Work status</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Title</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Updated</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -313,6 +335,7 @@ export default function AdminAlumniPage() {
                     <td className="px-4 py-3 font-mono">
                       {row.campusStartYear ?? "—"}–{row.campusEndYear ?? "—"}
                     </td>
+                    <td className="px-4 py-3">{row.cohort?.name ?? "—"}</td>
                     <td className="px-4 py-3">
                       {[row.city, row.countryName ?? row.countryCode].filter(Boolean).join(", ") || "—"}
                     </td>
@@ -330,7 +353,7 @@ export default function AdminAlumniPage() {
                 ))}
                 {rows.length === 0 && !list.isPending ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                       No records match these filters.
                     </td>
                   </tr>
@@ -351,6 +374,9 @@ export default function AdminAlumniPage() {
                 ) : null}
                 <p className="mt-1 font-mono text-xs text-muted-foreground">
                   {row.campusStartYear ?? "—"}–{row.campusEndYear ?? "—"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Cohort: {row.cohort?.name ?? "—"}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {[row.city, row.countryName ?? row.countryCode].filter(Boolean).join(", ") || "—"}

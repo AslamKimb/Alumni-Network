@@ -183,7 +183,7 @@ export default function Onboarding({ session }: { session: Session }) {
 
   if (status.isError) {
     return (
-      <p className="py-16 text-sm text-destructive">
+      <p role="alert" className="py-16 text-sm text-red-700 dark:text-destructive">
         We could not load your record. Refresh to try again.
       </p>
     );
@@ -226,15 +226,23 @@ export default function Onboarding({ session }: { session: Session }) {
             value={consentFullName}
             maxLength={120}
             aria-invalid={consentFullName.trim().length < 2 || consentFullName.trim().length > 120}
+            aria-describedby={
+              consentFullName.trim().length < 2 || consentFullName.trim().length > 120
+                ? "consentFullName-error"
+                : undefined
+            }
             onChange={(event) => setConsentFullName(event.target.value)}
           />
           {(consentFullName.trim().length < 2 || consentFullName.trim().length > 120) && (
-            <p className="text-xs text-destructive">Name must be 2–120 characters.</p>
+            <p id="consentFullName-error" role="alert" className="text-xs text-red-700 dark:text-destructive">
+              Name must be 2–120 characters.
+            </p>
           )}
         </div>
         <label className="mt-6 flex items-start gap-3">
           <Checkbox
             checked={consent}
+            aria-label="I consent to storing my alumni record"
             onCheckedChange={(checked) => setConsent(checked === true)}
           />
           <span className="text-sm leading-relaxed">
@@ -388,6 +396,7 @@ export default function Onboarding({ session }: { session: Session }) {
         {STEP_TITLES.map((title, index) => (
           <li
             key={title}
+            aria-current={index + 1 === currentStep ? "step" : undefined}
             className={`h-1 flex-1 rounded-full ${index + 1 <= currentStep ? "bg-primary" : "bg-muted"}`}
           >
             <span className="sr-only">{title}</span>
@@ -417,7 +426,7 @@ export default function Onboarding({ session }: { session: Session }) {
                 <Label htmlFor="campusStartYear">Campus start year</Label>
                 <select
                   id="campusStartYear"
-                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
                   value={values1.campusStartYear}
                   onChange={(e) =>
                     setStep1({ ...values1, campusStartYear: Number(e.target.value) })
@@ -434,7 +443,7 @@ export default function Onboarding({ session }: { session: Session }) {
                 <Label htmlFor="campusEndYear">Campus end year</Label>
                 <select
                   id="campusEndYear"
-                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
                   value={values1.campusEndYear}
                   onChange={(e) =>
                     setStep1({ ...values1, campusEndYear: Number(e.target.value) })
@@ -499,7 +508,7 @@ export default function Onboarding({ session }: { session: Session }) {
                 <Label htmlFor="workStatus">Work status</Label>
                 <select
                   id="workStatus"
-                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
                   value={values2.workStatus}
                   onChange={(e) =>
                     setStep2({ ...values2, workStatus: e.target.value as Step2["workStatus"] })
@@ -550,7 +559,7 @@ export default function Onboarding({ session }: { session: Session }) {
                 id="bio"
                 maxLength={300}
                 rows={3}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
                 value={values2.bio}
                 onChange={(e) => setStep2({ ...values2, bio: e.target.value })}
               />
@@ -581,113 +590,137 @@ export default function Onboarding({ session }: { session: Session }) {
               {dutyList.map((entry, index) => (
                 <div key={index} className="space-y-3 rounded-lg border p-4">
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <select
-                      aria-label="Duty type"
-                      className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                      value={entry.type}
-                      onChange={(e) =>
-                        setDuties(
-                          dutyList.map((item, i) =>
-                            i === index
-                              ? { ...item, type: e.target.value as DutyEntry["type"] }
-                              : item,
-                          ),
-                        )
-                      }
-                    >
-                      {DUTY_TYPES.map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                    <Input
-                      aria-label="Duty title"
-                      placeholder="Title"
-                      value={entry.title}
-                      onChange={(e) =>
-                        setDuties(
-                          dutyList.map((item, i) =>
-                            i === index ? { ...item, title: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
-                    <Input
-                      aria-label="Duty organization"
-                      placeholder="Organization"
-                      value={entry.organization}
-                      onChange={(e) =>
-                        setDuties(
-                          dutyList.map((item, i) =>
-                            i === index ? { ...item, organization: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`duty-type-${index}`}>Type</Label>
+                      <select
+                        id={`duty-type-${index}`}
+                        aria-label="Duty type"
+                        className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
+                        value={entry.type}
+                        onChange={(e) =>
+                          setDuties(
+                            dutyList.map((item, i) =>
+                              i === index
+                                ? { ...item, type: e.target.value as DutyEntry["type"] }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        {DUTY_TYPES.map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`duty-title-${index}`}>Title</Label>
+                      <Input
+                        id={`duty-title-${index}`}
+                        aria-label="Duty title"
+                        placeholder="Title"
+                        value={entry.title}
+                        onChange={(e) =>
+                          setDuties(
+                            dutyList.map((item, i) =>
+                              i === index ? { ...item, title: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`duty-organization-${index}`}>Organization</Label>
+                      <Input
+                        id={`duty-organization-${index}`}
+                        aria-label="Duty organization"
+                        placeholder="Organization"
+                        value={entry.organization}
+                        onChange={(e) =>
+                          setDuties(
+                            dutyList.map((item, i) =>
+                              i === index ? { ...item, organization: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <select
-                      aria-label="Duty start year"
-                      className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                      value={entry.startYear}
-                      onChange={(e) =>
-                        setDuties(
-                          dutyList.map((item, i) =>
-                            i === index ? { ...item, startYear: Number(e.target.value) } : item,
-                          ),
-                        )
-                      }
-                    >
-                      {YEARS.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      aria-label="Duty end year"
-                      className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                      value={entry.endYear ?? ""}
-                      onChange={(e) =>
-                        setDuties(
-                          dutyList.map((item, i) =>
-                            i === index
-                              ? {
-                                  ...item,
-                                  endYear: e.target.value === "" ? null : Number(e.target.value),
-                                }
-                              : item,
-                          ),
-                        )
-                      }
-                    >
-                      <option value="">Ongoing</option>
-                      {YEARS.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`duty-start-${index}`}>Start year</Label>
+                      <select
+                        id={`duty-start-${index}`}
+                        aria-label="Duty start year"
+                        className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
+                        value={entry.startYear}
+                        onChange={(e) =>
+                          setDuties(
+                            dutyList.map((item, i) =>
+                              i === index ? { ...item, startYear: Number(e.target.value) } : item,
+                            ),
+                          )
+                        }
+                      >
+                        {YEARS.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`duty-end-${index}`}>End year</Label>
+                      <select
+                        id={`duty-end-${index}`}
+                        aria-label="Duty end year"
+                        className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
+                        value={entry.endYear ?? ""}
+                        onChange={(e) =>
+                          setDuties(
+                            dutyList.map((item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    endYear: e.target.value === "" ? null : Number(e.target.value),
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="">Ongoing</option>
+                        {YEARS.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Input
-                      aria-label="Duty description"
-                      placeholder="Description (optional)"
-                      value={entry.description}
-                      onChange={(e) =>
-                        setDuties(
-                          dutyList.map((item, i) =>
-                            i === index ? { ...item, description: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Label htmlFor={`duty-description-${index}`}>Description (optional)</Label>
+                      <Input
+                        id={`duty-description-${index}`}
+                        aria-label="Duty description"
+                        placeholder="Description (optional)"
+                        value={entry.description}
+                        onChange={(e) =>
+                          setDuties(
+                            dutyList.map((item, i) =>
+                              i === index ? { ...item, description: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="ml-3"
+                      className="ml-3 shrink-0"
                       onClick={() => setDuties(dutyList.filter((_, i) => i !== index))}
                     >
                       Remove
@@ -718,89 +751,109 @@ export default function Onboarding({ session }: { session: Session }) {
               {educationList.map((entry, index) => (
                 <div key={index} className="space-y-3 rounded-lg border p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <select
-                      aria-label="Education level"
-                      className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                      value={entry.level}
-                      onChange={(e) =>
-                        setEducation(
-                          educationList.map((item, i) =>
-                            i === index
-                              ? { ...item, level: e.target.value as EducationEntry["level"] }
-                              : item,
-                          ),
-                        )
-                      }
-                    >
-                      {EDUCATION_LEVELS.map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                    <Input
-                      aria-label="Education program"
-                      placeholder="Program"
-                      value={entry.program}
-                      onChange={(e) =>
-                        setEducation(
-                          educationList.map((item, i) =>
-                            i === index ? { ...item, program: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
-                    <Input
-                      aria-label="Education institution"
-                      placeholder="Institution"
-                      value={entry.institution}
-                      onChange={(e) =>
-                        setEducation(
-                          educationList.map((item, i) =>
-                            i === index ? { ...item, institution: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
-                    <select
-                      aria-label="Year completed"
-                      className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                      value={entry.yearCompleted}
-                      onChange={(e) =>
-                        setEducation(
-                          educationList.map((item, i) =>
-                            i === index
-                              ? { ...item, yearCompleted: Number(e.target.value) }
-                              : item,
-                          ),
-                        )
-                      }
-                    >
-                      {YEARS.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`education-level-${index}`}>Level</Label>
+                      <select
+                        id={`education-level-${index}`}
+                        aria-label="Education level"
+                        className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
+                        value={entry.level}
+                        onChange={(e) =>
+                          setEducation(
+                            educationList.map((item, i) =>
+                              i === index
+                                ? { ...item, level: e.target.value as EducationEntry["level"] }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        {EDUCATION_LEVELS.map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`education-program-${index}`}>Program</Label>
+                      <Input
+                        id={`education-program-${index}`}
+                        aria-label="Education program"
+                        placeholder="Program"
+                        value={entry.program}
+                        onChange={(e) =>
+                          setEducation(
+                            educationList.map((item, i) =>
+                              i === index ? { ...item, program: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`education-institution-${index}`}>Institution</Label>
+                      <Input
+                        id={`education-institution-${index}`}
+                        aria-label="Education institution"
+                        placeholder="Institution"
+                        value={entry.institution}
+                        onChange={(e) =>
+                          setEducation(
+                            educationList.map((item, i) =>
+                              i === index ? { ...item, institution: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`education-year-${index}`}>Year completed</Label>
+                      <select
+                        id={`education-year-${index}`}
+                        aria-label="Year completed"
+                        className="h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10"
+                        value={entry.yearCompleted}
+                        onChange={(e) =>
+                          setEducation(
+                            educationList.map((item, i) =>
+                              i === index
+                                ? { ...item, yearCompleted: Number(e.target.value) }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        {YEARS.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Input
-                      aria-label="Education description"
-                      placeholder="Description (optional)"
-                      value={entry.description}
-                      onChange={(e) =>
-                        setEducation(
-                          educationList.map((item, i) =>
-                            i === index ? { ...item, description: e.target.value } : item,
-                          ),
-                        )
-                      }
-                    />
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Label htmlFor={`education-description-${index}`}>Description (optional)</Label>
+                      <Input
+                        id={`education-description-${index}`}
+                        aria-label="Education description"
+                        placeholder="Description (optional)"
+                        value={entry.description}
+                        onChange={(e) =>
+                          setEducation(
+                            educationList.map((item, i) =>
+                              i === index ? { ...item, description: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="ml-3"
+                      className="ml-3 shrink-0"
                       onClick={() => setEducation(educationList.filter((_, i) => i !== index))}
                     >
                       Remove

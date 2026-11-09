@@ -113,7 +113,7 @@ function AnnouncementBell() {
                 <li key={item.id}>
                   <Link
                     href={`/announcements/${item.id}`}
-                    className="block rounded px-2 py-2 hover:bg-muted/60"
+                    className="block rounded px-2 py-2 outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50"
                     onClick={() => setOpen(false)}
                   >
                     <p className="text-sm font-medium">{item.title}</p>
@@ -125,7 +125,7 @@ function AnnouncementBell() {
           )}
           <Link
             href="/announcements"
-            className="mt-1 block rounded px-2 py-2 text-center text-sm font-medium text-highlight hover:bg-muted/60"
+            className="mt-1 block rounded px-2 py-2 text-center text-sm font-medium text-highlight outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50"
             onClick={() => setOpen(false)}
           >
             View all announcements
@@ -147,6 +147,8 @@ export default function Header({
 }) {
   const trpc = useTRPC();
   const org = useQuery(trpc.settings.getOrganization.queryOptions());
+  const { data: session } = authClient.useSession();
+  const signedIn = !!session?.user;
 
   const orgName = org.data?.name?.trim() || "Alumni Network";
   const shortName = org.data?.shortName?.trim() ?? "";
@@ -155,10 +157,10 @@ export default function Header({
   useEffect(() => setLogoError(false), [logoUrl]);
 
   return (
-    <header className="shrink-0 border-b bg-card">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
+    <header className="sticky top-0 z-50 shrink-0 border-b bg-card">
+      <div className="flex h-16 w-full items-center justify-between gap-4 px-4 md:px-6">
         <div className="flex min-w-0 items-center gap-2">
-          {onMenuClick && (
+          {onMenuClick && signedIn && (
             <Button
               type="button"
               variant="outline"
@@ -170,7 +172,7 @@ export default function Header({
               <Menu className="size-5" />
             </Button>
           )}
-          {onToggleCollapse && (
+          {onToggleCollapse && signedIn && (
             <Button
               type="button"
               variant="outline"
@@ -184,7 +186,11 @@ export default function Header({
               <PanelLeft className="size-5" />
             </Button>
           )}
-          <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <Link
+            href="/"
+            aria-label={orgName}
+            className="flex min-w-0 items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
             {logoUrl && !logoError ? (
               <img
                 src={logoUrl}
@@ -197,7 +203,7 @@ export default function Header({
                 {monogram(shortName, orgName)}
               </span>
             )}
-            <span className="truncate font-heading text-base font-semibold tracking-tight">
+            <span className="hidden truncate font-heading text-base font-semibold tracking-tight min-[480px]:block">
               {orgName}
             </span>
           </Link>

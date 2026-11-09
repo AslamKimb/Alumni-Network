@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-muted-foreground">
               Contact the alumni office and they will help you get back into your account.
             </p>
-            <Button className="w-full" nativeButton={false} render={<Link href="/login" />}>
+            <Button className="w-full" nativeButton={false} render={<Link href="/login?mode=signin" />}>
               Back to sign in
             </Button>
           </CardContent>

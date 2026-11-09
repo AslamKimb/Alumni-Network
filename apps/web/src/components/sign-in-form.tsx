@@ -68,12 +68,22 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: ()
                   id={field.name}
                   name={field.name}
                   type="email"
+                  autoComplete="email"
+                  aria-invalid={field.state.meta.errors.length > 0 ? true : undefined}
+                  aria-describedby={
+                    field.state.meta.errors.length > 0 ? `${field.name}-error` : undefined
+                  }
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-sm text-destructive">
+                {field.state.meta.errors.map((error, i) => (
+                  <p
+                    key={error?.message}
+                    id={i === 0 ? `${field.name}-error` : undefined}
+                    role="alert"
+                    className="text-sm text-red-700 dark:text-destructive"
+                  >
                     {error?.message}
                   </p>
                 ))}
@@ -91,12 +101,22 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: ()
                   id={field.name}
                   name={field.name}
                   type="password"
+                  autoComplete="current-password"
+                  aria-invalid={field.state.meta.errors.length > 0 ? true : undefined}
+                  aria-describedby={
+                    field.state.meta.errors.length > 0 ? `${field.name}-error` : undefined
+                  }
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-sm text-destructive">
+                {field.state.meta.errors.map((error, i) => (
+                  <p
+                    key={error?.message}
+                    id={i === 0 ? `${field.name}-error` : undefined}
+                    role="alert"
+                    className="text-sm text-red-700 dark:text-destructive"
+                  >
                     {error?.message}
                   </p>
                 ))}

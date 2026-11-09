@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { AudienceBadge } from "@/components/cohorts";
+import { ShareButtons, absoluteUrl } from "@/components/share-buttons";
 import { useTRPC } from "@/utils/trpc";
 
 function fmt(date: Date | null) {
@@ -15,18 +17,44 @@ function fmt(date: Date | null) {
   });
 }
 
-function Card({ item }: { item: { id: string; title: string; category: string; startsAt: Date | string | null; location: string | null; isOnline: boolean } }) {
+function CoverImg({ src }: { src: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) return null;
   return (
-    <Link href={`/events/${item.id}`} className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60">
-      <span className="inline-flex rounded-sm bg-secondary px-3 py-1 text-xs font-medium tracking-[0.5px] uppercase">
-        {item.category}
-      </span>
-      <h3 className="mt-2 text-base font-semibold">{item.title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {fmt(typeof item.startsAt === "string" ? new Date(item.startsAt) : item.startsAt)} ·{" "}
-        {item.isOnline ? "Online" : (item.location ?? "Online")}
-      </p>
-    </Link>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className="aspect-[16/9] w-full rounded-md object-cover" onError={() => setBroken(true)} />
+  );
+}
+
+function Card({
+  item,
+  myCohortId,
+  myCohortName,
+}: {
+  item: { id: string; title: string; category: string; startsAt: Date | string | null; location: string | null; isOnline: boolean; audience?: string; coverImageUrl?: string | null };
+  myCohortId?: string | null;
+  myCohortName?: string | null;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <Link href={`/events/${item.id}`} className="block transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        {item.coverImageUrl && <CoverImg src={item.coverImageUrl} />}
+        <span className="mt-2 inline-flex rounded-sm bg-secondary px-3 py-1 text-xs font-medium tracking-[0.5px] uppercase">
+          {item.category}
+        </span>
+        <h3 className="mt-2 break-words text-base font-semibold">{item.title}</h3>
+        <p className="mt-1 break-words text-sm text-muted-foreground">
+          {fmt(typeof item.startsAt === "string" ? new Date(item.startsAt) : item.startsAt)} ·{" "}
+          {item.isOnline ? "Online" : (item.location ?? "Online")}
+        </p>
+        <div className="mt-2">
+          <AudienceBadge audience={item.audience} myCohortId={myCohortId} myCohortName={myCohortName} />
+        </div>
+      </Link>
+      <div className="mt-3">
+        <ShareButtons url={absoluteUrl(`/events/${item.id}`)} title={item.title} />
+      </div>
+    </div>
   );
 }
 
@@ -38,6 +66,7 @@ export default function EventsList() {
     ...trpc.events.listPublished.queryOptions(),
     enabled: flags.data?.events !== false,
   });
+  const myCohort = useQuery(trpc.cohorts.getMyCohort.queryOptions());
 
   if (flags.data?.events === false) {
     return (
@@ -62,7 +91,7 @@ export default function EventsList() {
           role="tab"
           aria-selected={tab === "upcoming"}
           onClick={() => setTab("upcoming")}
-          className={tab === "upcoming" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" : "rounded-md border px-4 py-2 text-sm"}
+          className={tab === "upcoming" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" : "rounded-md border px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"}
         >
           Upcoming
         </button>
@@ -71,7 +100,7 @@ export default function EventsList() {
             role="tab"
             aria-selected={tab === "past"}
             onClick={() => setTab("past")}
-            className={tab === "past" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" : "rounded-md border px-4 py-2 text-sm"}
+            className={tab === "past" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" : "rounded-md border px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"}
           >
             Past
           </button>
@@ -85,7 +114,12 @@ export default function EventsList() {
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {active.map((item) => (
-            <Card key={item.id} item={item} />
+            <Card
+              key={item.id}
+              item={item}
+              myCohortId={myCohort.data?.cohort?.id ?? null}
+              myCohortName={myCohort.data?.cohort?.name ?? null}
+            />
           ))}
         </div>
       )}

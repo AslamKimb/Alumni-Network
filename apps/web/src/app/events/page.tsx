@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { CohortCard } from "@/components/cohorts";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/utils/trpc";
 
@@ -44,17 +45,18 @@ export default function EventsPage() {
       <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
         Alumni Network
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">Events</h1>
+      <h1 className="mt-2">Events</h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
         News and gatherings from the alumni office.
       </p>
+      <CohortCard />
 
       <div className="mt-6 flex gap-2" role="tablist" aria-label="Event views">
         <button
           role="tab"
           aria-selected={view === "calendar"}
           onClick={() => setView("calendar")}
-          className={view === "calendar" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" : "rounded-md border px-4 py-2 text-sm"}
+          className={view === "calendar" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" : "rounded-md border px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"}
         >
           Calendar
         </button>
@@ -62,7 +64,7 @@ export default function EventsPage() {
           role="tab"
           aria-selected={view === "list"}
           onClick={() => setView("list")}
-          className={view === "list" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" : "rounded-md border px-4 py-2 text-sm"}
+          className={view === "list" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" : "rounded-md border px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"}
         >
           List
         </button>

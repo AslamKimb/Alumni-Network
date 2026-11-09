@@ -1,4 +1,5 @@
 import { alumniProfile, duty, education, session, user } from "@Alumni-Network/db/schema/auth";
+import { cohort } from "@Alumni-Network/db/schema/cohort";
 import { appSetting } from "@Alumni-Network/db/schema/setting";
 import type { Database } from "@Alumni-Network/db";
 import { TRPCError } from "@trpc/server";
@@ -37,6 +38,7 @@ const filtersInput = z.object({
   workStatus: z.enum(workStatuses).optional().nullable(),
   educationLevel: z.enum(educationLevels).optional().nullable(),
   dutyType: z.enum(dutyTypes).optional().nullable(),
+  cohortId: z.string().trim().optional().nullable(),
   status: z.enum(["active", "deactivated", "all", "incomplete"]).optional().nullable(),
 });
 
@@ -64,7 +66,7 @@ async function readRecordsSettings(db: Database) {
 
 // All filters combine with AND. Deactivated hidden by default; "incomplete"
 // keeps them hidden too (use "all" to reveal deactivated records).
-function buildWhere(filters: Filters) {
+async function buildWhere(db: Database, filters: Filters) {
   const conditions = [];
 
   const search = filters.search?.trim();
@@ -86,6 +88,31 @@ function buildWhere(filters: Filters) {
   if (filters.campusFrom != null) conditions.push(gte(alumniProfile.campusEndYear, filters.campusFrom));
   if (filters.campusTo != null) conditions.push(lte(alumniProfile.campusStartYear, filters.campusTo));
   if (filters.workStatus) conditions.push(eq(alumniProfile.workStatus, filters.workStatus));
+
+  if (filters.cohortId) {
+    if (filters.cohortId === "none" || filters.cohortId === "unassigned") {
+      conditions.push(
+        sql`NOT EXISTS (SELECT 1 FROM ${cohort} WHERE ${alumniProfile.campusEndYear} BETWEEN ${cohort.startYear} AND ${cohort.endYear})`,
+      );
+    } else {
+      const [target] = await db
+        .select()
+        .from(cohort)
+        .where(eq(cohort.id, filters.cohortId))
+        .limit(1);
+      if (target) {
+        conditions.push(
+          and(
+            gte(alumniProfile.campusEndYear, target.startYear),
+            lte(alumniProfile.campusEndYear, target.endYear),
+          )!,
+        );
+      } else {
+        // Unknown cohort id -> empty result
+        conditions.push(sql`0 = 1`);
+      }
+    }
+  }
 
   if (filters.educationLevel) {
     conditions.push(
@@ -145,12 +172,22 @@ const rowShape = {
   deactivatedAt: user.deactivatedAt,
 };
 
-function shapeRow<T extends Record<string, unknown>>(row: T) {
+function shapeRow<T extends Record<string, unknown>>(
+  row: T,
+  allCohorts: { id: string; name: string; startYear: number; endYear: number }[] = [],
+) {
   const countryCode = row.countryCode as string | null;
+  const found = allCohorts.find(
+    (c) =>
+      row.campusEndYear != null &&
+      (row.campusEndYear as number) >= c.startYear &&
+      (row.campusEndYear as number) <= c.endYear,
+  );
   return {
     ...row,
     countryName: countryCode ? COUNTRY_NAMES.get(countryCode) ?? null : null,
     incomplete: !row.onboardingCompletedAt,
+    cohort: found ? { id: found.id, name: found.name } : null,
   };
 }
 
@@ -186,7 +223,7 @@ async function activeAdminCount(db: Database) {
 export const alumniRouter = router({
   list: permissionProcedure("records:view").input(listInput).query(async ({ ctx, input }) => {
     const { sort, page, pageSize, ...filters } = input;
-    const where = buildWhere(filters);
+    const where = await buildWhere(ctx.db, filters);
 
     const [rows, total] = await Promise.all([
       ctx.db
@@ -205,9 +242,10 @@ export const alumniRouter = router({
     ]);
 
     const filteredCount = total[0]?.value ?? 0;
+    const allCohorts = await ctx.db.select().from(cohort);
 
     return {
-      rows: rows.map(shapeRow),
+      rows: rows.map((r) => shapeRow(r, allCohorts)),
       total: filteredCount,
       filteredCount,
       page,
@@ -292,7 +330,7 @@ export const alumniRouter = router({
       }
 
       const { sort, ...filters } = input;
-      const where = buildWhere(filters);
+      const where = await buildWhere(ctx.db, filters);
 
       const rows = await ctx.db
         .select(rowShape)
@@ -317,6 +355,7 @@ export const alumniRouter = router({
           ])
         : [[], []];
 
+      const allCohorts = await ctx.db.select().from(cohort);
       const dutiesByProfile = groupByProfile(allDuties);
       const educationByProfile = groupByProfile(allEducation);
 
@@ -326,6 +365,7 @@ export const alumniRouter = router({
         ...(settings.includePhone ? ["Phone"] : []),
         "Campus start",
         "Campus end",
+        "Cohort",
         "City",
         "Region",
         "Country",
@@ -353,6 +393,13 @@ export const alumniRouter = router({
           ...(settings.includePhone ? [row.phone ?? ""] : []),
           row.campusStartYear ?? "",
           row.campusEndYear ?? "",
+          (row.campusEndYear != null
+            ? (allCohorts.find(
+                (c) =>
+                  (row.campusEndYear as number) >= c.startYear &&
+                  (row.campusEndYear as number) <= c.endYear,
+              )?.name ?? "")
+            : ""),
           row.city ?? "",
           row.region ?? "",
           row.countryCode ? (COUNTRY_NAMES.get(row.countryCode) ?? row.countryCode) : "",

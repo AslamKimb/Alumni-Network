@@ -101,7 +101,7 @@ export default function DashboardPage() {
           <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
             Finish your profile
           </p>
-          <h1 className="mt-2 text-2xl font-semibold">Your record is not complete yet</h1>
+          <h1 className="mt-2">Your record is not complete yet</h1>
           <p className="mt-3 text-sm text-muted-foreground">
             You stopped at step {step} of 3, {STEP_NAMES[step - 1]?.toLowerCase()}. Your saved answers are
             waiting, so you can pick up where you left off.
@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 md:px-6">
-      <h1 className="text-2xl font-semibold">Welcome, {name}</h1>
+      <h1>Welcome, {name}</h1>
 
       {!profile ? (
         <div className="mt-6 max-w-xl rounded-lg border p-4">
@@ -148,11 +148,11 @@ export default function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-muted-foreground">Professional title</p>
-                <p className="mt-1 text-sm">{profile.professionalTitle ?? "Not set"}</p>
+                <p className="mt-1 break-words text-sm">{profile.professionalTitle ?? "Not set"}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Location</p>
-                <p className="mt-1 text-sm">
+                <p className="mt-1 break-words text-sm">
                   {[profile.city, countryName(profile.countryCode)]
                     .filter((v) => v && v !== "Not set")
                     .join(", ") || "Not set"}
@@ -160,7 +160,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Campus years</p>
-                <p className="mt-1 text-sm">
+                <p className="mt-1 break-words text-sm">
                   <span className="font-mono">
                     {profile.campusStartYear ?? "—"}–{profile.campusEndYear ?? "—"}
                   </span>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Work status</p>
-                <p className="mt-1 text-sm">{workStatusLabel(profile.workStatus)}</p>
+                <p className="mt-1 break-words text-sm">{workStatusLabel(profile.workStatus)}</p>
               </div>
             </div>
           </section>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
       )}
 
       <section className="mt-6" aria-label="Latest updates">
-        <h2 className="text-base font-semibold">Latest updates</h2>
+        <h2 className="text-xl font-semibold">Latest updates</h2>
         {eventsQuery.isPending ? (
           <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
         ) : eventsQuery.isError ? (
@@ -215,12 +215,12 @@ export default function DashboardPage() {
               <Link
                 key={item.id}
                 href={`/events/${item.id}`}
-                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60"
+                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 <span className="inline-flex rounded-sm bg-secondary px-3 py-1 text-xs font-medium tracking-[0.5px] uppercase">
                   {item.category}
                 </span>
-                <h3 className="mt-2 text-base font-semibold">{item.title}</h3>
+                <h3 className="mt-2 break-words text-base font-semibold">{item.title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {fmtDate(item.startsAt)} · {item.isOnline ? "Online" : (item.location ?? "Online")}
                 </p>
@@ -228,27 +228,27 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-        <Link href="/events" className="mt-4 inline-block text-sm font-medium text-highlight underline-offset-4 hover:underline">
+        <Link href="/events" className="mt-4 inline-block text-sm font-medium text-highlight underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           View all events
         </Link>
       </section>
 
       {latestAnnouncements.length > 0 && (
         <section className="mt-6" aria-label="Latest announcements">
-          <h2 className="text-base font-semibold">Latest announcements</h2>
+          <h2 className="text-xl font-semibold">Latest announcements</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {latestAnnouncements.map((item) => (
               <Link
                 key={item.id}
                 href={`/announcements/${item.id}`}
-                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60"
+                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
-                <h3 className="text-base font-semibold">{item.title}</h3>
+                <h3 className="break-words text-base font-semibold">{item.title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{fmtDate(item.publishedAt)}</p>
               </Link>
             ))}
           </div>
-          <Link href="/announcements" className="mt-4 inline-block text-sm font-medium text-highlight underline-offset-4 hover:underline">
+          <Link href="/announcements" className="mt-4 inline-block text-sm font-medium text-highlight underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             View all announcements
           </Link>
         </section>
@@ -256,13 +256,13 @@ export default function DashboardPage() {
 
       <section className="mt-6" aria-label="Quick actions">
         <div className="flex flex-wrap gap-2">
-          <Link href="/settings/profile" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          <Link href="/settings/profile" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             Edit profile
           </Link>
-          <Link href="/events" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+          <Link href="/events" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             View events
           </Link>
-          <Link href="/settings/account" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+          <Link href="/settings/account" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             Settings
           </Link>
         </div>
@@ -270,26 +270,26 @@ export default function DashboardPage() {
 
       {(canManageEvents || canManageAnnouncements || canViewRecords || canViewReports) && (
         <section className="mt-6" aria-label="Admin">
-          <h2 className="text-base font-semibold">Admin</h2>
+          <h2 className="text-xl font-semibold">Admin</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {canViewRecords && (
-              <Link href="/admin/alumni" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+              <Link href="/admin/alumni" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                 Alumni Records
               </Link>
             )}
             {canViewReports && (
               /* Plain anchor: /admin/reports is not a typed route yet (module not started). */
-              <a href="/admin/reports" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+              <a href="/admin/reports" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                 Reports
               </a>
             )}
             {canManageEvents && (
-              <Link href="/admin/events" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+              <Link href="/admin/events" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                 Event management
               </Link>
             )}
             {canManageAnnouncements && (
-              <Link href="/admin/announcements" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+              <Link href="/admin/announcements" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                 Announcement management
               </Link>
             )}

@@ -15,7 +15,7 @@ function Field({ label, value }: { label: string; value: string | null | undefin
   return (
     <div>
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm">{value && value !== "" ? value : "—"}</p>
+      <p className="mt-1 text-sm break-words">{value && value !== "" ? value : "—"}</p>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export default function AdminAlumniDetailPage() {
           <h1>{profile.fullName}</h1>
           <div className="mt-2 flex flex-wrap gap-2">
             {profile.incomplete ? (
-              <span className="rounded-sm bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">Incomplete</span>
+              <span className="rounded-sm bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning-foreground">Incomplete</span>
             ) : null}
             <span className={`rounded-sm px-2 py-0.5 text-xs font-medium ${isActive ? "bg-highlight/10 text-highlight" : "bg-muted text-muted-foreground"}`}>
               {isActive ? "Active" : "Deactivated"}

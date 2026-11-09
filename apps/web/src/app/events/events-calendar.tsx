@@ -47,6 +47,7 @@ export default function EventsCalendar({ enabled }: { enabled: boolean }) {
     ...trpc.events.listPublishedInRange.queryOptions(range),
     enabled: enabled && !sessionPending && !!session?.user && flags.data?.events !== false,
   });
+  const myCohort = useQuery(trpc.cohorts.getMyCohort.queryOptions());
 
   const cells = monthCells(cursor);
   const dayMap = new Map<string, typeof rangeQuery.data>();
@@ -65,15 +66,15 @@ export default function EventsCalendar({ enabled }: { enabled: boolean }) {
         <button
           type="button"
           onClick={() => setCursor((c) => shiftMonth(c, -1))}
-          className="rounded-md border px-4 py-2 text-sm"
+          className="rounded-md border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-4"
         >
           Previous
         </button>
-        <p className="min-w-36 text-center text-sm font-medium">{monthLabel}</p>
+        <p className="min-w-28 text-center text-sm font-medium sm:min-w-36">{monthLabel}</p>
         <button
           type="button"
           onClick={() => setCursor((c) => shiftMonth(c, 1))}
-          className="rounded-md border px-4 py-2 text-sm"
+          className="rounded-md border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-4"
         >
           Next
         </button>
@@ -89,7 +90,7 @@ export default function EventsCalendar({ enabled }: { enabled: boolean }) {
         <div className="mt-4 overflow-hidden rounded-lg border">
           <div className="grid grid-cols-7 bg-muted/60 text-xs font-medium">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-              <div key={d} className="px-2 py-2 text-center">
+              <div key={d} className="px-1 py-1.5 text-center sm:px-2 sm:py-2">
                 {d}
               </div>
             ))}
@@ -100,15 +101,15 @@ export default function EventsCalendar({ enabled }: { enabled: boolean }) {
               const items = dayMap.get(key) ?? [];
               const inMonth = day.getMonth() === cursor.getMonth();
               return (
-                <div key={key} className={`min-h-24 border-t border-r px-2 py-2 ${inMonth ? "" : "bg-muted/30"}`}>
+                <div key={key} className={`min-h-16 border-t border-r px-1 py-1 sm:min-h-24 sm:px-2 sm:py-2 ${inMonth ? "" : "bg-muted/30"}`}>
                   <p className={`text-xs font-medium ${inMonth ? "" : "text-muted-foreground"}`}>{day.getDate()}</p>
                   <div className="mt-1 space-y-1">
                     {items.map((item) => (
                       <Link
                         key={item.id}
                         href={`/events/${item.id}`}
-                        className="block truncate rounded bg-secondary px-1.5 py-0.5 text-xs"
-                        title={`${item.title} — ${item.startsAt ? new Date(item.startsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : ""}`}
+                        className="block truncate rounded bg-secondary px-1 py-0.5 text-[11px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs"
+                        title={`${item.title}${item.audience && item.audience !== "all" && item.audience === myCohort.data?.cohort?.id ? ` — For ${myCohort.data?.cohort?.name ?? "your cohort"}` : ""} — ${item.startsAt ? new Date(item.startsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : ""}`}
                       >
                         {item.startsAt
                           ? `${new Date(item.startsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} ${item.seriesId ? "↻ " : ""}${item.title}`

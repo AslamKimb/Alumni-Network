@@ -53,9 +53,6 @@ function ModuleForm({ title }: { title: string }) {
     if (settings.data && !values) setValues(settings.data);
   }, [settings.data, values]);
 
-  if (settings.isPending) return <p className="mt-10 text-sm text-muted-foreground">Loading settings…</p>;
-  if (!values) return <p className="mt-10 text-sm text-destructive">Could not load settings.</p>;
-
   const save = useMutation(
     trpc.settings.saveModuleSettings.mutationOptions({
       onSuccess: (data) => {
@@ -66,6 +63,9 @@ function ModuleForm({ title }: { title: string }) {
       onError: (err) => toast.error(err.message),
     }),
   );
+
+  if (settings.isPending) return <p className="mt-10 text-sm text-muted-foreground">Loading settings…</p>;
+  if (!values) return <p className="mt-10 text-sm text-error-text">Could not load settings.</p>;
 
   return (
     <form

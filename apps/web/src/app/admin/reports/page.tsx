@@ -245,15 +245,15 @@ export default function AdminReportsPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Campus from</span>
-            <input className="h-10 w-full rounded-md border px-3 text-sm font-mono" placeholder="2018" inputMode="numeric" value={filters.campusFrom} onChange={(e) => set({ campusFrom: e.target.value })} />
+            <input className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm font-mono" placeholder="2018" inputMode="numeric" value={filters.campusFrom} onChange={(e) => set({ campusFrom: e.target.value })} />
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Campus to</span>
-            <input className="h-10 w-full rounded-md border px-3 text-sm font-mono" placeholder="2022" inputMode="numeric" value={filters.campusTo} onChange={(e) => set({ campusTo: e.target.value })} />
+            <input className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm font-mono" placeholder="2022" inputMode="numeric" value={filters.campusTo} onChange={(e) => set({ campusTo: e.target.value })} />
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Country</span>
-            <select className="h-10 w-full rounded-md border px-3 text-sm" value={filters.country} onChange={(e) => set({ country: e.target.value })}>
+            <select className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm" value={filters.country} onChange={(e) => set({ country: e.target.value })}>
               <option value="">All</option>
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -264,7 +264,7 @@ export default function AdminReportsPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Work status</span>
-            <select className="h-10 w-full rounded-md border px-3 text-sm" value={filters.workStatus} onChange={(e) => set({ workStatus: e.target.value })}>
+            <select className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm" value={filters.workStatus} onChange={(e) => set({ workStatus: e.target.value })}>
               <option value="">All</option>
               <option value="employed">Employed</option>
               <option value="self_employed">Self-employed</option>
@@ -276,7 +276,7 @@ export default function AdminReportsPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Education level</span>
-            <select className="h-10 w-full rounded-md border px-3 text-sm" value={filters.educationLevel} onChange={(e) => set({ educationLevel: e.target.value })}>
+            <select className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm" value={filters.educationLevel} onChange={(e) => set({ educationLevel: e.target.value })}>
               <option value="">All</option>
               <option value="secondary">Secondary</option>
               <option value="certificate">Certificate</option>
@@ -289,7 +289,7 @@ export default function AdminReportsPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Duty type</span>
-            <select className="h-10 w-full rounded-md border px-3 text-sm" value={filters.dutyType} onChange={(e) => set({ dutyType: e.target.value })}>
+            <select className="h-10 w-full rounded-md border px-3 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/10 text-sm" value={filters.dutyType} onChange={(e) => set({ dutyType: e.target.value })}>
               <option value="">All</option>
               <option value="religious">Religious</option>
               <option value="political">Political</option>
@@ -304,7 +304,7 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-      {report.isError ? <p className="mt-8 text-sm text-destructive">Could not load the report. The reports router may need wiring.</p> : null}
+      {report.isError ? <p className="mt-8 text-sm text-error-text">Could not load the report. The reports router may need wiring.</p> : null}
       {report.isPending ? <p className="mt-8 text-sm text-muted-foreground">Loading…</p> : null}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -365,11 +365,11 @@ export default function AdminReportsPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Campus years</th>
-                  <th className="px-3 py-2 font-medium">Location</th>
-                  <th className="px-3 py-2 font-medium">Work status</th>
-                  <th className="px-3 py-2 font-medium">Title</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Name</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Campus years</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Location</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Work status</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Title</th>
                 </tr>
               </thead>
               <tbody>

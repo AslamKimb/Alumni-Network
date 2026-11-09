@@ -98,7 +98,7 @@ export default function AdminEventsPage() {
       <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
         Admin
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">Events</h1>
+      <h1 className="mt-2">Events</h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
         Draft, publish, and delete the items alumni see under Events.
       </p>
@@ -117,7 +117,7 @@ export default function AdminEventsPage() {
 
       {view === "calendar" ? (
         <div className="mt-6">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" onClick={() => setCursor((c) => shiftMonth(c, -1))}>
               Previous
             </Button>
@@ -125,13 +125,13 @@ export default function AdminEventsPage() {
             <Button type="button" variant="outline" onClick={() => setCursor((c) => shiftMonth(c, 1))}>
               Next
             </Button>
-            <p className="ml-auto text-xs text-muted-foreground">Filters apply to List view; Calendar shows all events this month.</p>
+            <p className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">Filters apply to List view; Calendar shows all events this month.</p>
           </div>
 
           {rangeQuery.isPending ? (
             <p className="mt-8 text-sm text-muted-foreground">Loading…</p>
           ) : rangeQuery.isError ? (
-            <p className="mt-8 text-sm text-destructive">Could not load calendar.</p>
+            <p className="mt-8 text-sm text-error-text">Could not load calendar.</p>
           ) : (
             <div className="mt-4 overflow-hidden rounded-lg border">
               <div className="grid grid-cols-7 bg-muted/60 text-xs font-medium">
@@ -147,7 +147,7 @@ export default function AdminEventsPage() {
                   const items = byDay.get(key) ?? [];
                   const inMonth = day.getMonth() === cursor.getMonth();
                   return (
-                    <div key={key} className={`min-h-24 border-t border-r px-2 py-2 ${inMonth ? "" : "bg-muted/30"}`}>
+                    <div key={key} className={`min-h-16 border-t border-r px-2 py-2 sm:min-h-24 ${inMonth ? "" : "bg-muted/30"}`}>
                       <p className={`text-xs font-medium ${inMonth ? "" : "text-muted-foreground"}`}>{day.getDate()}</p>
                       <div className="mt-1 space-y-1">
                         {items.map((item) => (

@@ -28,7 +28,7 @@ export default async function NewEventPage() {
       <p className="font-heading text-xs font-semibold uppercase tracking-[0.5px] text-highlight">
         Admin
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">New event</h1>
+      <h1 className="mt-2">New event</h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
         Save a draft first, then publish from the event page when it is ready.
       </p>

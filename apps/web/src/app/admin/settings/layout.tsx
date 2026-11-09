@@ -12,6 +12,7 @@ const TABS = [
   { to: "/admin/settings/events", label: "Events" },
   { to: "/admin/settings/records", label: "Records" },
   { to: "/admin/settings/reports", label: "Reports" },
+  { to: "/admin/settings/cohorts", label: "Cohorts" },
   { to: "/admin/access", label: "Access" },
 ] as const;
 
@@ -30,7 +31,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
                 href={to}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                  "rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:outline-none",
                   active
                     ? "border-primary text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",

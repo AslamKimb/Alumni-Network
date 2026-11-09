@@ -57,14 +57,14 @@ function inline(text: string) {
     if (token.startsWith("**") || token.startsWith("__")) {
       parts.push(<strong key={key++}>{token.slice(2, -2)}</strong>);
     } else if (token.startsWith("`")) {
-      parts.push(<code key={key++} className="rounded bg-muted px-1 font-mono text-sm">{token.slice(1, -1)}</code>);
+      parts.push(<code key={key++} className="rounded bg-muted px-1 font-mono text-sm [overflow-wrap:anywhere]">{token.slice(1, -1)}</code>);
     } else if (token.startsWith("*")) {
       parts.push(<em key={key++}>{token.slice(1, -1)}</em>);
     } else {
       const label = token.slice(1, token.indexOf("]"));
       const url = token.slice(token.indexOf("(") + 1, -1);
       parts.push(
-        <a key={key++} href={url} target="_blank" rel="noreferrer noopener" className="text-highlight underline">
+        <a key={key++} href={url} target="_blank" rel="noreferrer noopener" className="text-highlight underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {label}
         </a>,
       );

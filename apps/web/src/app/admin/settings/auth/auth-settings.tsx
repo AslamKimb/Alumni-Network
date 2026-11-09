@@ -24,7 +24,7 @@ export default function AuthSettings() {
   }
 
   if (!settings.data) {
-    return <p className="mt-10 text-sm text-destructive">Could not load settings.</p>;
+    return <p className="mt-10 text-sm text-error-text">Could not load settings.</p>;
   }
 
   return <AuthSettingsForm initial={settings.data} />;

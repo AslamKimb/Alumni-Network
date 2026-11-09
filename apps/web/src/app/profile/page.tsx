@@ -66,18 +66,30 @@ export default function ProfilePage() {
     if (!sessionPending && !session?.user) router.replace("/login");
   }, [session, sessionPending, router]);
 
-  if (sessionPending || profileQuery.isPending) return <p className="text-sm text-muted-foreground">Loading your profile…</p>;
+  if (sessionPending || profileQuery.isPending)
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 md:px-6">
+        <p className="text-sm text-muted-foreground">Loading your profile…</p>
+      </main>
+    );
   if (!session?.user) return null;
-  if (profileQuery.isError) return <p className="text-sm text-destructive">We could not load your profile. Refresh to try again.</p>;
+  if (profileQuery.isError)
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 md:px-6">
+        <p className="text-sm text-destructive">We could not load your profile. Refresh to try again.</p>
+      </main>
+    );
 
   const data = profileQuery.data;
   if (!data?.profile) {
     return (
-      <div className="max-w-xl">
-        <h1 className="text-2xl font-semibold">Your profile</h1>
-        <p className="mt-3 text-sm text-muted-foreground">You have no alumni record yet. Finish onboarding to build one.</p>
-        <Button className="mt-6" onClick={() => router.push("/onboarding")}>Go to onboarding</Button>
-      </div>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 md:px-6">
+        <div className="max-w-xl">
+          <h1>Your profile</h1>
+          <p className="mt-3 text-sm text-muted-foreground">You have no alumni record yet. Finish onboarding to build one.</p>
+          <Button className="mt-6" onClick={() => router.push("/onboarding")}>Go to onboarding</Button>
+        </div>
+      </main>
     );
   }
 
@@ -92,9 +104,9 @@ export default function ProfilePage() {
             {initials(profile.fullName)}
           </div>
           <div>
-            <h1 className="text-2xl font-semibold">{profile.fullName}</h1>
+            <h1>{profile.fullName}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{profile.professionalTitle ?? "No professional title"}</p>
-            <p className="mt-1 text-sm">{[profile.city, profile.region, countryName(profile.countryCode)].filter((v, i, a) => v && v !== "Not set" || (i === 2 && profile.countryCode)).join(", ") || "No location"}</p>
+            <p className="mt-1 break-words text-sm">{[profile.city, profile.region, countryName(profile.countryCode)].filter((v, i, a) => v && v !== "Not set" || (i === 2 && profile.countryCode)).join(", ") || "No location"}</p>
           </div>
         </div>
         <Button onClick={() => router.push("/settings/profile")}>Edit profile</Button>
@@ -102,7 +114,7 @@ export default function ProfilePage() {
 
       <section className="mt-6 rounded-lg border p-4" aria-label="Profile completeness">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-medium">Completeness</p>
+          <p className="break-words text-sm font-medium">Completeness</p>
           <p className="font-mono text-sm">{percent}%</p>
         </div>
         <div className="mt-2 h-2 rounded-full bg-muted" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
@@ -118,39 +130,39 @@ export default function ProfilePage() {
       <section className="mt-6 grid gap-4 rounded-lg border p-6 sm:grid-cols-2">
         <div>
           <p className="text-xs text-muted-foreground">Campus years</p>
-          <p className="mt-1 text-sm"><span className="font-mono">{profile.campusStartYear ?? "—"}–{profile.campusEndYear ?? "—"}</span></p>
+          <p className="mt-1 break-words text-sm"><span className="font-mono">{profile.campusStartYear ?? "—"}–{profile.campusEndYear ?? "—"}</span></p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Work status</p>
-          <p className="mt-1 text-sm">{workStatusLabel(profile.workStatus)}</p>
+          <p className="mt-1 break-words text-sm">{workStatusLabel(profile.workStatus)}</p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Location</p>
-          <p className="mt-1 text-sm">{profile.city ?? "—"}{profile.region ? `, ${profile.region}` : ""}, {countryName(profile.countryCode)}</p>
+          <p className="mt-1 break-words text-sm">{profile.city ?? "—"}{profile.region ? `, ${profile.region}` : ""}, {countryName(profile.countryCode)}</p>
         </div>
         {profile.employer && (
           <div>
             <p className="text-xs text-muted-foreground">Employer</p>
-            <p className="mt-1 text-sm">{profile.employer}</p>
+            <p className="mt-1 break-words text-sm">{profile.employer}</p>
           </div>
         )}
         {profile.phone && (
           <div>
             <p className="text-xs text-muted-foreground">Phone</p>
-            <p className="mt-1 text-sm">{profile.phone}</p>
+            <p className="mt-1 break-words text-sm">{profile.phone}</p>
           </div>
         )}
       </section>
 
       {profile.bio && (
         <section className="mt-6 rounded-lg border p-6">
-          <h2 className="text-sm font-semibold">Bio</h2>
+          <h2 className="text-xl font-semibold">Bio</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm">{profile.bio}</p>
         </section>
       )}
 
       <section className="mt-6 rounded-lg border p-6">
-        <h2 className="text-sm font-semibold">Duties</h2>
+        <h2 className="text-xl font-semibold">Duties</h2>
         {data.duties.length === 0 && <p className="mt-2 text-sm text-muted-foreground">No duties recorded.</p>}
         {DUTY_GROUP_ORDER.map((group) => {
           const items = data.duties.filter((d) => d.type === group.type);
@@ -161,7 +173,7 @@ export default function ProfilePage() {
               <ul className="mt-2 space-y-3">
                 {items.map((d) => (
                   <li key={d.id} className="rounded-md border p-4">
-                    <p className="text-sm font-medium">{d.title} — {d.organization}</p>
+                    <p className="break-words text-sm font-medium">{d.title} — {d.organization}</p>
                     <p className="mt-0.5 font-mono text-xs text-muted-foreground">{d.startYear}–{d.endYear ?? "Ongoing"}</p>
                     {d.description && <p className="mt-1 whitespace-pre-wrap text-sm">{d.description}</p>}
                   </li>
@@ -173,12 +185,12 @@ export default function ProfilePage() {
       </section>
 
       <section className="mt-6 rounded-lg border p-6">
-        <h2 className="text-sm font-semibold">Education</h2>
+        <h2 className="text-xl font-semibold">Education</h2>
         {data.education.length === 0 && <p className="mt-2 text-sm text-muted-foreground">No education recorded.</p>}
         <ul className="mt-2 space-y-3">
           {data.education.map((e) => (
             <li key={e.id} className="rounded-md border p-4">
-              <p className="text-sm font-medium">{EDUCATION_LABELS[e.level] ?? e.level}: {e.program} — {e.institution}</p>
+              <p className="break-words text-sm font-medium">{EDUCATION_LABELS[e.level] ?? e.level}: {e.program} — {e.institution}</p>
               <p className="mt-0.5 font-mono text-xs text-muted-foreground">Completed {e.yearCompleted}</p>
               {e.description && <p className="mt-1 whitespace-pre-wrap text-sm">{e.description}</p>}
             </li>
