@@ -7,14 +7,41 @@ import { toast } from "sonner";
 
 import { Button } from "@Alumni-Network/ui/components/button";
 
-import { useTRPC } from "@/utils/trpc";
+import { useTRPC, useTRPCClient } from "@/utils/trpc";
 
 import { EventPreview, emptyValues, toInput, type EventFormValues } from "../form-preview";
+import { countOccurrences, type RecurrenceFreq } from "../recurrence";
+
+type SeriesClient = {
+  createSeries: {
+    mutate: (input: {
+      title: string;
+      summary?: string;
+      body?: string;
+      category: "event" | "update";
+      startsAt?: Date;
+      endsAt?: Date;
+      location?: string;
+      isOnline: boolean;
+      coverImageUrl?: string;
+      recurrenceFreq: RecurrenceFreq;
+      recurrenceInterval: number;
+      recurrenceEnd: string;
+      exceptionDates: string[];
+    }) => Promise<{ id: string }>;
+  };
+};
 
 export default function EventForm() {
   const router = useRouter();
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const [values, setValues] = useState<EventFormValues>(emptyValues);
+  const [freq, setFreq] = useState<"never" | RecurrenceFreq>("never");
+  const [interval, setInterval] = useState(1);
+  const [recurrenceEnd, setRecurrenceEnd] = useState("");
+  const [exceptionDates, setExceptionDates] = useState<string[]>([]);
+  const [exceptionDraft, setExceptionDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const create = useMutation(
@@ -25,9 +52,29 @@ export default function EventForm() {
       onError: (err) => setError(err.message),
     }),
   );
+  const seriesClient = trpcClient.events as unknown as SeriesClient;
+  const createSeries = useMutation({
+    mutationFn: (input: Parameters<SeriesClient["createSeries"]["mutate"]>[0]) =>
+      seriesClient.createSeries.mutate(input),
+    onSuccess: (row) => router.push(`/admin/events/${row.id}`),
+    onError: (err) => setError(err.message),
+  });
 
   const set = <K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) =>
     setValues((v) => ({ ...v, [key]: value }));
+
+  const expectedCount =
+    freq === "never"
+      ? null
+      : countOccurrences({
+          startsAt: values.startsAt,
+          recurrenceFreq: freq,
+          recurrenceInterval: interval,
+          recurrenceEnd,
+          exceptionDates,
+        });
+
+  const isSaving = create.isPending || createSeries.isPending;
 
   return (
     <div className="mt-6 grid gap-8 md:grid-cols-2">
@@ -35,7 +82,15 @@ export default function EventForm() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          create.mutate(toInput(values));
+          if (freq === "never") {
+            create.mutate(toInput(values));
+          } else {
+            if (!recurrenceEnd) {
+              setError("Repeat until is required for recurring events.");
+              return;
+            }
+            createSeries.mutate({ ...toInput(values), recurrenceFreq: freq, recurrenceInterval: interval, recurrenceEnd, exceptionDates });
+          }
         }}
         className="space-y-4"
       >
@@ -114,10 +169,91 @@ export default function EventForm() {
           />
         </label>
 
+        <fieldset className="space-y-3 rounded-md border p-3">
+          <legend className="px-1 text-sm font-medium">Recurrence</legend>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Repeat</span>
+              <select value={freq} onChange={(e) => setFreq(e.target.value as "never" | RecurrenceFreq)} className="h-10 rounded-md border px-2">
+                <option value="never">Never</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Interval</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={interval}
+                disabled={freq === "never"}
+                onChange={(e) => setInterval(Math.max(1, Number(e.target.value)))}
+                className="h-10 rounded-md border px-3 disabled:opacity-50"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Repeat until</span>
+              <input
+                type="date"
+                value={recurrenceEnd}
+                disabled={freq === "never"}
+                onChange={(e) => setRecurrenceEnd(e.target.value)}
+                className="h-10 rounded-md border px-2 disabled:opacity-50"
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Exception dates</span>
+            <div className="flex gap-2">
+              <input
+                value={exceptionDraft}
+                disabled={freq === "never"}
+                onChange={(e) => setExceptionDraft(e.target.value)}
+                placeholder="yyyy-mm-dd"
+                className="h-10 flex-1 rounded-md border px-3 disabled:opacity-50"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={freq === "never" || !/^\d{4}-\d{2}-\d{2}$/.test(exceptionDraft)}
+                onClick={() => {
+                  setExceptionDates((list) => (list.includes(exceptionDraft) ? list : [...list, exceptionDraft]));
+                  setExceptionDraft("");
+                }}
+              >
+                Add
+              </Button>
+            </div>
+            {exceptionDates.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {exceptionDates.map((d) => (
+                  <span key={d} className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-1 text-xs">
+                    {d}
+                    <button type="button" aria-label={`Remove ${d}`} onClick={() => setExceptionDates((list) => list.filter((x) => x !== d))}>
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {freq !== "never" && (
+            <p className="text-xs text-muted-foreground">
+              {expectedCount == null
+                ? "Set start and repeat-until to preview occurrence count."
+                : `Creates ${expectedCount} occurrence${expectedCount === 1 ? "" : "s"} (exception dates excluded).`}
+            </p>
+          )}
+        </fieldset>
+
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Saving…" : "Save draft"}
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? "Saving…" : "Save draft"}
         </Button>
       </form>
 

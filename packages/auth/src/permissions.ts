@@ -1,4 +1,5 @@
 export const PERMISSION_KEYS = [
+  "announcements:manage",
   "events:manage",
   "records:view",
   "records:export",
@@ -10,6 +11,7 @@ export const PERMISSION_KEYS = [
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
 
 export const PERMISSION_LABELS: Record<PermissionKey, string> = {
+  "announcements:manage": "Manage announcements",
   "events:manage": "Manage events",
   "records:view": "View alumni records",
   "records:export": "Export alumni data",
@@ -19,6 +21,7 @@ export const PERMISSION_LABELS: Record<PermissionKey, string> = {
 };
 
 export const PERMISSION_DESCRIPTIONS: Record<PermissionKey, string> = {
+  "announcements:manage": "Create, draft, publish, and delete announcements.",
   "events:manage": "Create, publish, and delete events and updates.",
   "records:view": "View alumnus records, including deactivation controls.",
   "records:export": "Download alumni records as a CSV file.",

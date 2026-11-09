@@ -72,6 +72,39 @@ const shape = (input: {
   }
 };
 
+const dateKey = (d: Date) => d.toISOString().slice(0, 10);
+const isValidDateKey = (s: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y = 0, m = 0, d = 0] = s.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+};
+const parseExceptions = (raw: string | null): string[] => {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+};
+function occurrenceDates(startsAt: Date, freq: string, interval: number, end: Date): Date[] {
+  const dates: Date[] = [];
+  let cur = new Date(startsAt);
+  let guard = 0;
+  while (cur.getTime() <= end.getTime() && guard++ < 10000) {
+    dates.push(new Date(cur));
+    if (dates.length >= 101) break;
+    const next = new Date(cur);
+    if (freq === "daily") next.setDate(next.getDate() + interval);
+    else if (freq === "weekly") next.setDate(next.getDate() + interval * 7);
+    else next.setMonth(next.getMonth() + interval);
+    if (next.getTime() <= cur.getTime()) break;
+    cur = next;
+  }
+  return dates;
+}
+
 async function requirePublishable(db: Database, id: string) {
   const [row] = await db
     .select()
@@ -308,5 +341,221 @@ export const eventsRouter = router({
         .limit(1);
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
       return row;
+    }),
+
+  createSeries: permissionProcedure("events:manage")
+    .input(
+      z.object({
+        ...eventFields(false).shape,
+        recurrenceFreq: z.enum(["daily", "weekly", "monthly"]),
+        recurrenceInterval: z.number().int().min(1).max(52),
+        recurrenceEnd: z.date(),
+        exceptionDates: z
+          .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
+          .max(100)
+          .default([])
+          .refine((arr) => arr.every(isValidDateKey), {
+            message: "exceptionDates must be valid yyyy-mm-dd dates",
+          }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      shape(input);
+      if (!input.startsAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Start date is required for series" });
+      }
+      if (input.recurrenceEnd.getTime() < input.startsAt.getTime()) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "recurrenceEnd cannot precede start date",
+        });
+      }
+      const exceptionSet = new Set(input.exceptionDates);
+      const allDates = occurrenceDates(
+        input.startsAt,
+        input.recurrenceFreq,
+        input.recurrenceInterval,
+        input.recurrenceEnd,
+      );
+      const dates = allDates.filter((d) => !exceptionSet.has(dateKey(d)));
+      if (dates.length > 100) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Series exceeds 100 instances",
+        });
+      }
+      const [root] = await ctx.db
+        .insert(event)
+        .values({
+          title: input.title,
+          summary: input.summary ?? "",
+          body: input.body ?? "",
+          category: input.category,
+          startsAt: input.startsAt,
+          endsAt: input.endsAt ?? null,
+          location: input.location ?? null,
+          isOnline: input.isOnline,
+          coverImageUrl: input.coverImageUrl || null,
+          status: "draft",
+          createdBy: ctx.currentUser.id,
+          seriesId: null,
+          recurrenceFreq: input.recurrenceFreq,
+          recurrenceInterval: input.recurrenceInterval,
+          recurrenceEnd: input.recurrenceEnd,
+          exceptionDates: JSON.stringify(input.exceptionDates),
+        })
+        .returning();
+      if (!root) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create series" });
+      const duration =
+        root.startsAt && root.endsAt ? root.endsAt.getTime() - root.startsAt.getTime() : null;
+      const instanceRows: typeof event.$inferSelect[] = [];
+      for (const occ of dates) {
+        if (root.startsAt && occ.getTime() === root.startsAt.getTime()) continue;
+        const [inst] = await ctx.db
+          .insert(event)
+          .values({
+            title: root.title,
+            summary: root.summary,
+            body: root.body,
+            category: root.category,
+            startsAt: occ,
+            endsAt: duration !== null ? new Date(occ.getTime() + duration) : null,
+            location: root.location,
+            isOnline: root.isOnline,
+            coverImageUrl: root.coverImageUrl,
+            status: "draft",
+            createdBy: ctx.currentUser.id,
+            seriesId: root.id,
+          })
+          .returning();
+        if (!inst) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create instance" });
+        instanceRows.push(inst);
+      }
+      return { root, instances: instanceRows };
+    }),
+
+  listInRange: permissionProcedure("events:manage")
+    .input(z.object({ from: z.coerce.date(), to: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db
+        .select()
+        .from(event)
+        .where(and(gte(event.startsAt, input.from), lte(event.startsAt, input.to)))
+        .orderBy(asc(event.startsAt));
+    }),
+
+  listPublishedInRange: protectedProcedure
+    .input(z.object({ from: z.coerce.date(), to: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      const { moduleEnabled, showPastEvents } = await readEventSettings(ctx.db);
+      if (!moduleEnabled) return [];
+      const conditions = [
+        eq(event.status, "published"),
+        gte(event.startsAt, input.from),
+        lte(event.startsAt, input.to),
+      ];
+      if (!showPastEvents) conditions.push(gte(event.startsAt, new Date()));
+      return ctx.db
+        .select()
+        .from(event)
+        .where(and(...conditions))
+        .orderBy(asc(event.startsAt));
+    }),
+
+  cancelOccurrence: permissionProcedure("events:manage")
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [instance] = await ctx.db
+        .select()
+        .from(event)
+        .where(eq(event.id, input.id))
+        .limit(1);
+      if (!instance) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+      if (!instance.seriesId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Event is not part of a series" });
+      }
+      if (!instance.startsAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Instance has no start date" });
+      }
+      const [root] = await ctx.db
+        .select()
+        .from(event)
+        .where(eq(event.id, instance.seriesId))
+        .limit(1);
+      if (!root) throw new TRPCError({ code: "NOT_FOUND", message: "Series not found" });
+      const key = dateKey(instance.startsAt);
+      const exceptions = parseExceptions(root.exceptionDates);
+      if (!exceptions.includes(key)) exceptions.push(key);
+      await ctx.db
+        .update(event)
+        .set({ exceptionDates: JSON.stringify(exceptions), updatedAt: new Date() })
+        .where(eq(event.id, root.id));
+      await ctx.db.delete(event).where(eq(event.id, instance.id));
+      return { deleted: true };
+    }),
+
+  addException: permissionProcedure("events:manage")
+    .input(z.object({ seriesId: z.string(), date: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isValidDateKey(input.date)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Date must be yyyy-mm-dd" });
+      }
+      const [root] = await ctx.db
+        .select()
+        .from(event)
+        .where(eq(event.id, input.seriesId))
+        .limit(1);
+      if (!root || !root.recurrenceFreq) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Series not found" });
+      }
+      const [y = 0, m = 0, d = 0] = input.date.split("-").map(Number);
+      const dateObj = new Date(Date.UTC(y, m - 1, d));
+      if (
+        root.startsAt &&
+        root.recurrenceEnd &&
+        (dateObj.getTime() < new Date(dateKey(root.startsAt) + "T00:00:00Z").getTime() ||
+          dateObj.getTime() > root.recurrenceEnd.getTime())
+      ) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Date outside series window" });
+      }
+      const exceptions = parseExceptions(root.exceptionDates);
+      if (!exceptions.includes(input.date)) exceptions.push(input.date);
+      const [updatedRoot] = await ctx.db
+        .update(event)
+        .set({ exceptionDates: JSON.stringify(exceptions), updatedAt: new Date() })
+        .where(eq(event.id, root.id))
+        .returning();
+      const [match] = await ctx.db
+        .select()
+        .from(event)
+        .where(and(eq(event.seriesId, root.id), gte(event.startsAt, dateObj)))
+        .limit(1);
+      if (match && match.startsAt && dateKey(match.startsAt) === input.date) {
+        await ctx.db.delete(event).where(eq(event.id, match.id));
+      }
+      return updatedRoot;
+    }),
+
+  removeException: permissionProcedure("events:manage")
+    .input(z.object({ seriesId: z.string(), date: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isValidDateKey(input.date)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Date must be yyyy-mm-dd" });
+      }
+      const [root] = await ctx.db
+        .select()
+        .from(event)
+        .where(eq(event.id, input.seriesId))
+        .limit(1);
+      if (!root || !root.recurrenceFreq) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Series not found" });
+      }
+      const exceptions = parseExceptions(root.exceptionDates).filter((x) => x !== input.date);
+      const [updatedRoot] = await ctx.db
+        .update(event)
+        .set({ exceptionDates: JSON.stringify(exceptions), updatedAt: new Date() })
+        .where(eq(event.id, root.id))
+        .returning();
+      return updatedRoot;
     }),
 });

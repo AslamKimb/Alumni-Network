@@ -1,43 +1,49 @@
 # Gauntlet Run Board
 
 ## Summary
-- Goal: Fix OrganizationForm hooks crash + org logo upload reflects in header + org name replaces "Alumni Network" in header + sidebar collapsible on desktop.
-- Quality bar: All criteria below pass with independent critic; typecheck + build pass; live runtime verified (app on 3000/3001).
-- Overall state: PASS
-- Current wave: W1-whole-system complete
+- Goal: User-facing /events ("Events tab") gets List + Calendar views with toggle, default matching admin (calendar); new listPublishedInRange procedure; published-only calendar; recurring series instance chips with root/native distinction.
+- Quality bar: Each todo has passing critic, whole-system PASS + evidence.
+- Overall state: SETUP
+- Current wave: W1-initial
 - Passed modules: 3 / 3
 - Active: none
 - Blocked: none
 - Whole-system gate: PASS (fresh whole-system critic)
-- Last update: 2026-11-08T09:30:00Z
+- Last update: 2026-11-08T12:30:00Z
 
 ## Modules
 
 | ID | Output | Depends on | Quality gate | Owner | Round | Status | Last verdict | Largest gap | Evidence | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|
-| M1 | Org page hooks fix + logo/name propagation verify | None | C1-C3 | Builder | 1 | PASSED | PASS | None | Fresh critic: all hooks before early returns, save/cache verified, logo+monogram fallback live, check-types 0 | M3 |
-| M2 | Desktop collapsible sidebar | None | C4-C6 | Builder | 1 | PASSED | PASS | None | Fresh critic: desktop toggle + icon rail + localStorage, mobile drawer intact, check-types 0 build 26 routes | M3 |
-| M3 | Whole-system critic | M1, M2 PASS | All criteria + evidence | Critic | 1 | PASSED | PASS | None | Fresh whole-system critic: C1-C6 verified, check-types 6/6, build 26/26, 3000+3001 200 | Run complete |
+| M1 | Backend: `listPublishedInRange({from,to})` in events router | None | C2, C4 | Builder | 1 | PASSED | PASS | None | Fresh critic: flags + published-only + range + asc verified, api typecheck clean | M3 |
+| M2 | Frontend: `/events` view toggle (default calendar), calendar grid, list preserved | M1 parallel | C1-C6 | Builder | 1 | PASSED | PASS | None | Fresh critic: default calendar, toggle, chips+↻, guards intact, web check-types+build passed | M3 |
+| M3 | Whole-system critic | M1, M2 PASS | All criteria + evidence | Critic | 1 | PASSED | PASS | None | Fresh whole-system critic: C1-C6 verified, check-types 6/6, build 28/28, runtime 401-not-404 | Run complete |
 
 ## Criteria
 
-- C1: /admin/settings/organization renders without hooks error (all hooks before any early return; useMutation unconditionally called).
-- C2: Saving org settings persists all 10 fields; getOrganization returns updated values; landing + header show new name immediately.
-- C3: Setting logoUrl to a valid HTTPS image makes header show that image (monogram fallback when empty/broken).
-- C4: Desktop sidebar collapsible: toggle button collapses to icon rail or hidden; state persists across navigation; expand restores.
-- C5: Mobile behavior unchanged (overlay drawer); desktop links still role/permission-gated.
-- C6: pnpm check-types + pnpm build pass; no regression on prior routes.
+- C1: /events shows Calendar/List toggle; default = calendar.
+- C2: Calendar fetches published events in visible month via listPublishedInRange; hides drafts/unpublished; chips navigate to /events/[id]; past months respect show_past_events.
+- C3: List view still works with Upcoming/Past tabs.
+- C4: Recurring series instances show correctly on calendar (each occurrence anchored to root date); instance detail links work.
+- C5: Events module-disabled => /events shows Not found (existing guard preserved).
+- C6: pnpm check-types + pnpm build pass; hooks correct.
+
+## Backend contract (M1 implements; M2 depends on its name/shape)
+
+- `listPublishedInRange({ from: Date, to: Date })` protectedProcedure -> published-only rows in range, ordered asc, respects events module flag (empty when disabled) and show_past_events (when false, only startsAt >= now even in calendar).
 
 ## Dependency DAG
 
 ```
-M1 (org page + header/logo) ─┐
-                             ├-> M3 whole-system
-M2 (sidebar collapse) ───────┘
+M1 (listPublishedInRange) ─┐
+                           ├-> M3 whole-system
+M2 (user events views) ────┘
 ```
+
+Parallel now: M1, M2 (disjoint files; M2 builds against contract). Free worker slots: 2.
 
 ## Event Log
 
 | When | Module | Transition | Evidence or decision | Unlocked / next |
 |---|---|---|---|---|
-| 2026-11-08T09:00:00Z | — | CREATED | Console: hooks order crash in OrganizationForm (useMutation after early returns); sidebar needs desktop collapse; logo/name propagation to verify | M1+M2 READY |
+| 2026-11-08T12:00:00Z | — | CREATED | Request: user /events tab shows Upcoming/Past only; user wants same List + Calendar views as admin (default calendar) | M1+M2 READY |

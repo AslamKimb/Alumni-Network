@@ -17,6 +17,7 @@ export type CurrentUser = {
   role: string;
   permissions: string;
   deactivatedAt: Date | null;
+  announcementSeenAt: Date | null;
 };
 
 // The role is re-read from the database on every call. A session cookie alone
@@ -36,6 +37,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
       role: user.role,
       permissions: user.permissions,
       deactivatedAt: user.deactivatedAt,
+      announcementSeenAt: user.announcementSeenAt,
     })
     .from(user)
     .where(eq(user.id, ctx.session.user.id))

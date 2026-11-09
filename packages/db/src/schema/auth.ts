@@ -9,6 +9,7 @@ export const user = sqliteTable("user", {
   role: text("role").default("alumnus").notNull(),
   permissions: text("permissions").default("[]").notNull(),
   deactivatedAt: integer("deactivated_at", { mode: "timestamp_ms" }),
+  announcementSeenAt: integer("announcement_seen_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),

@@ -20,6 +20,11 @@ export const event = sqliteTable(
     coverImageUrl: text("cover_image_url"),
     status: text("status").notNull(),
     publishedAt: integer("published_at", { mode: "timestamp_ms" }),
+    seriesId: text("series_id"),
+    recurrenceFreq: text("recurrence_freq"),
+    recurrenceInterval: integer("recurrence_interval"),
+    recurrenceEnd: integer("recurrence_end", { mode: "timestamp_ms" }),
+    exceptionDates: text("exception_dates"),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

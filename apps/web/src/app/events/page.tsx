@@ -2,10 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/utils/trpc";
 
+import EventsCalendar from "./events-calendar";
 import EventsList from "./events-list";
 
 export default function EventsPage() {
@@ -13,6 +15,7 @@ export default function EventsPage() {
   const trpc = useTRPC();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const flags = useQuery(trpc.settings.publicModuleFlags.queryOptions());
+  const [view, setView] = useState<"calendar" | "list">("calendar");
 
   if (sessionPending) {
     return (
@@ -46,7 +49,26 @@ export default function EventsPage() {
         News and gatherings from the alumni office.
       </p>
 
-      <EventsList />
+      <div className="mt-6 flex gap-2" role="tablist" aria-label="Event views">
+        <button
+          role="tab"
+          aria-selected={view === "calendar"}
+          onClick={() => setView("calendar")}
+          className={view === "calendar" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" : "rounded-md border px-4 py-2 text-sm"}
+        >
+          Calendar
+        </button>
+        <button
+          role="tab"
+          aria-selected={view === "list"}
+          onClick={() => setView("list")}
+          className={view === "list" ? "rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" : "rounded-md border px-4 py-2 text-sm"}
+        >
+          List
+        </button>
+      </div>
+
+      {view === "calendar" ? <EventsCalendar enabled={view === "calendar"} /> : <EventsList />}
     </main>
   );
 }

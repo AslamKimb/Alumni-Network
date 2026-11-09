@@ -9,6 +9,7 @@ import {
   CalendarDays,
   CalendarPlus,
   LayoutDashboard,
+  Megaphone,
   Settings,
   ShieldCheck,
   User,
@@ -125,6 +126,7 @@ export default function Sidebar({
   const recordsEnabled = flags.data?.records !== false;
   const reportsEnabled = flags.data?.reports !== false;
   const canManageEvents = hasPermission(user, "events:manage");
+  const canManageAnnouncements = hasPermission(user, "announcements:manage");
   const canViewRecords = hasPermission(user, "records:view");
   const canViewReports = hasPermission(user, "reports:view");
   const canManageSettings = hasPermission(user, "settings:manage");
@@ -134,6 +136,7 @@ export default function Sidebar({
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/profile", label: "Profile", icon: User },
     ...(eventsEnabled ? [{ to: "/events", label: "Events", icon: CalendarDays }] : []),
+    { to: "/announcements", label: "Announcements", icon: Megaphone },
     { to: "/settings/account", label: "Settings", icon: Settings },
   ];
 
@@ -146,6 +149,9 @@ export default function Sidebar({
       : []),
     ...(eventsEnabled && canManageEvents
       ? [{ to: "/admin/events", label: "Event management", icon: CalendarPlus }]
+      : []),
+    ...(isAdmin || canManageAnnouncements
+      ? [{ to: "/admin/announcements", label: "Announcements", icon: Megaphone }]
       : []),
     ...(isAdmin ? [{ to: "/admin/access", label: "Access", icon: ShieldCheck }] : []),
     ...(canManageSettings

@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const status = useQuery(trpc.onboarding.status.queryOptions());
   const profileQuery = useQuery(trpc.profile.getMyProfile.queryOptions());
   const eventsQuery = useQuery(trpc.events.listPublished.queryOptions());
+  const announcementsQuery = useQuery(trpc.announcements.listPublished.queryOptions());
 
   useEffect(() => {
     if (!sessionPending && !session?.user) router.replace("/login");
@@ -86,6 +87,7 @@ export default function DashboardPage() {
 
   const isAdmin = session.user.role === "admin";
   const canManageEvents = hasPermission(session.user, "events:manage");
+  const canManageAnnouncements = hasPermission(session.user, "announcements:manage");
   const canViewRecords = hasPermission(session.user, "records:view");
   const canViewReports = hasPermission(session.user, "reports:view");
   const data = status.data;
@@ -123,6 +125,8 @@ export default function DashboardPage() {
         .sort((a, b) => new Date(b.startsAt ?? 0).getTime() - new Date(a.startsAt ?? 0).getTime())
         .slice(0, 3)
     : [];
+
+  const latestAnnouncements = (announcementsQuery.data ?? []).slice(0, 3);
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 md:px-6">
@@ -229,6 +233,27 @@ export default function DashboardPage() {
         </Link>
       </section>
 
+      {latestAnnouncements.length > 0 && (
+        <section className="mt-6" aria-label="Latest announcements">
+          <h2 className="text-base font-semibold">Latest announcements</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {latestAnnouncements.map((item) => (
+              <Link
+                key={item.id}
+                href={`/announcements/${item.id}`}
+                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-muted/60"
+              >
+                <h3 className="text-base font-semibold">{item.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{fmtDate(item.publishedAt)}</p>
+              </Link>
+            ))}
+          </div>
+          <Link href="/announcements" className="mt-4 inline-block text-sm font-medium text-highlight underline-offset-4 hover:underline">
+            View all announcements
+          </Link>
+        </section>
+      )}
+
       <section className="mt-6" aria-label="Quick actions">
         <div className="flex flex-wrap gap-2">
           <Link href="/settings/profile" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
@@ -243,7 +268,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {(canManageEvents || canViewRecords || canViewReports) && (
+      {(canManageEvents || canManageAnnouncements || canViewRecords || canViewReports) && (
         <section className="mt-6" aria-label="Admin">
           <h2 className="text-base font-semibold">Admin</h2>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -261,6 +286,11 @@ export default function DashboardPage() {
             {canManageEvents && (
               <Link href="/admin/events" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
                 Event management
+              </Link>
+            )}
+            {canManageAnnouncements && (
+              <Link href="/admin/announcements" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium">
+                Announcement management
               </Link>
             )}
           </div>
