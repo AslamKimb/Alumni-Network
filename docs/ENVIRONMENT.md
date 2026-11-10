@@ -171,25 +171,30 @@ If that banner is missing, the `@next/env` override is not active — env values
 
 ## Production on Dokploy
 
-**No `.env` file is deployed.** Dokploy's Environment tab writes environment variables into the container, and varlock validates them against the committed `.env.schema` at boot. Anything missing or malformed stops the container with a named error instead of booting a half-configured app.
+**No `.env` file is committed.** Dokploy's Environment tab holds one block for the whole Compose stack, and `docker-compose.yml` maps each value into the service that needs it. varlock then validates it against the committed `.env.schema` at boot. Anything missing or malformed stops the container with a named error instead of booting a half-configured app.
 
-Paste this into `alumni-api` → Environment:
+Paste this into the app's Environment tab:
 
 ```
-NODE_ENV=production
-BETTER_AUTH_SECRET=<openssl rand -hex 32>
+BETTER_AUTH_SECRET=replace-with-openssl-rand-hex-32
 BETTER_AUTH_URL=https://api.example.com
 CORS_ORIGIN=https://app.example.com
 DATABASE_URL=file:/data/alumni.db
 ADMIN_EMAILS=you@yourdomain.com
-```
-
-Paste this into `alumni-web` → Environment:
-
-```
-NODE_ENV=production
 NEXT_PUBLIC_SERVER_URL=https://api.example.com
 ```
+
+`NODE_ENV=production` is not in that block because the compose file sets it per service.
+
+**The mapping matters.** Dokploy writes the Environment tab to a `.env` file beside the compose file, and those values are *not* injected into containers by themselves. The compose file is what does it:
+
+```yaml
+  api:
+    environment:
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+```
+
+So every name appears twice: once in the Environment tab, once in `docker-compose.yml`. A variable you add to the UI but never reference in the compose file reaches no container, and varlock will report it as missing. `web` only receives `NODE_ENV` and `NEXT_PUBLIC_SERVER_URL` — it never sees the auth secret or the database path.
 
 Rules that bite if you ignore them:
 
@@ -197,25 +202,25 @@ Rules that bite if you ignore them:
 - **No trailing slash** on `BETTER_AUTH_URL`, `CORS_ORIGIN`, or `NEXT_PUBLIC_SERVER_URL`. The URL type accepts it, but the client appends `/trpc` and you get `//trpc`.
 - **`CORS_ORIGIN` is a single origin.** It is both the CORS allowlist and the only trusted Better Auth origin.
 - **`ADMIN_EMAILS` cannot be empty.** The schema requires a value, and an empty string fails validation before the app starts.
-- **`DATABASE_URL=file:/data/alumni.db`** is an absolute path inside the container. It only persists because `/data` is the mounted volume (see DEPLOYMENT.md §5).
+- **`DATABASE_URL=file:/data/alumni.db`** is an absolute path inside the container. It only persists because `/data` is the `alumni-db` volume (see DEPLOYMENT.md).
 
 ### Build time vs runtime
 
-| Variable | When it is read | Where to set it |
+| Variable | When it is read | Where it is set |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SERVER_URL` | `next build` inlines it into the client bundle | Build-time (Railpack env or Docker `--build-arg`), and also at runtime for boot validation |
-| `NODE_ENV` | Build and boot | Both; Railpack and the Dockerfiles set `production` themselves |
-| `BETTER_AUTH_SECRET` | Boot | Runtime only |
-| `BETTER_AUTH_URL` | Boot | Runtime only |
-| `CORS_ORIGIN` | Boot | Runtime only |
-| `DATABASE_URL` | Boot | Runtime only |
-| `ADMIN_EMAILS` | Boot | Runtime only |
+| `NEXT_PUBLIC_SERVER_URL` | `next build` inlines it into the client bundle | Compose `build.args`, and again as a runtime variable for boot validation |
+| `NODE_ENV` | Build and boot | Hardcoded per service in `docker-compose.yml` |
+| `BETTER_AUTH_SECRET` | Boot | Environment tab → `${...}` in the `api` service |
+| `BETTER_AUTH_URL` | Boot | Environment tab → `${...}` in the `api` service |
+| `CORS_ORIGIN` | Boot | Environment tab → `${...}` in the `api` service |
+| `DATABASE_URL` | Boot | Environment tab → `${...}` in `api` and `migrate` |
+| `ADMIN_EMAILS` | Boot | Environment tab → `${...}` in the `api` service |
 
-Changing a runtime variable needs a container restart. Changing `NEXT_PUBLIC_SERVER_URL` needs a **rebuild**, because the old value is already baked into the JavaScript the browser downloads. Setting it only at runtime is the most common way to ship a web app that still calls `localhost`.
+Changing a runtime variable needs a redeploy (container recreate). Changing `NEXT_PUBLIC_SERVER_URL` needs a **rebuild**, because the old value is already baked into the JavaScript the browser downloads. Setting it only at runtime is the most common way to ship a web app that still calls `localhost`.
 
 ## Changing the schema
 
-`src/env.ts` is generated and gitignored, so it is rebuilt in three places: your machine (`postinstall`), the Docker build (`RUN pnpm env:generate`), and Railpack (`postinstall` during install). After editing any `.env.schema`:
+`src/env.ts` is generated and gitignored, so it is rebuilt in three places: your machine (`postinstall`), the Docker build (`RUN pnpm env:generate`), and any platform that runs `pnpm install` for you. After editing any `.env.schema`:
 
 ```bash
 pnpm env:generate
@@ -236,6 +241,7 @@ Each of these was reproduced locally.
 | `[varlock] Invalid env vars: A, B` then exit code `1` | Validation summary | Fix every name listed |
 | `[varlock] No .env files found in <dir>` then `LibsqlError: URL_INVALID` | Running from a directory with no `.env.schema` | Run from the package directory, or ship the schema in the image |
 | Container restarts in a loop with a varlock error | Environment tab is missing a variable | Read the name in the log, add it, redeploy |
+| Value is in the Environment tab but the container still says it is empty | The compose service never references it with `${VAR}` | Add it to that service's `environment:` block |
 | Web app calls `localhost:3000` in production | `NEXT_PUBLIC_SERVER_URL` set at runtime only | Set it as a build argument and rebuild |
 | Everyone logged out after a deploy | `BETTER_AUTH_SECRET` changed | Expected. Rotating the secret invalidates all sessions. |
 

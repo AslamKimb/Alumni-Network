@@ -1,0 +1,53 @@
+# One Dokploy app (Compose type). Two long-running containers + a one-shot
+# migration container. Built from the repo root; see docs/DEPLOYMENT.md.
+services:
+  # Runs `drizzle-kit migrate` and exits. Gates the API via depends_on.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+      target: build
+    restart: "no"
+    command: ["pnpm", "--filter", "@Alumni-Network/db", "db:migrate:deploy"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - alumni-db:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      DATABASE_URL: ${DATABASE_URL}
+      ADMIN_EMAILS: ${ADMIN_EMAILS}
+    volumes:
+      - alumni-db:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # next build inlines this; changing it needs a rebuild.
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
+
+volumes:
+  alumni-db:
