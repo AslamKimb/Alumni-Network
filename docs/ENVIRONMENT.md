@@ -188,7 +188,7 @@ NEXT_PUBLIC_SERVER_URL=https://api.example.com
 
 Rules that bite if you ignore them:
 
-- **`app.example.com` and `api.example.com` must share a registrable domain.** Auth cookies are `SameSite=None; Secure`, which browsers reject across unrelated domains. `alumni.example.com` + `api.example.com` works; `alumni.vercel.app` + `api.example.com` does not.
+- **`app.example.com` and `api.example.com` must share a registrable domain.** Auth cookies are `SameSite=None; Secure`, which browsers reject across unrelated domains. `alumni.example.com` + `api.example.com` works; `alumni.vercel.app` + `api.example.com` does not. The cookie is scoped to the shared parent (`example.com`) automatically, so server-rendered pages on the web host can read the session too.
 - **No trailing slash** on `BETTER_AUTH_URL`, `CORS_ORIGIN`, or `NEXT_PUBLIC_SERVER_URL`. The URL type accepts it, but the client appends `/trpc` and you get `//trpc`.
 - **`CORS_ORIGIN` is a single origin.** It is both the CORS allowlist and the only trusted Better Auth origin.
 - **`ADMIN_EMAILS` cannot be empty.** The schema requires a value, and an empty string fails validation before the app starts.

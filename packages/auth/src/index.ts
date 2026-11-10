@@ -57,11 +57,24 @@ async function shouldBootstrapAdmin(env: AuthConfig, database: Database, email: 
   return (await activeAdminIds(database)).length === 0;
 }
 
+// Server components on the web host forward the incoming cookie to the API, so
+// the cookie has to be scoped to the domain both hosts share:
+// app.example.com -> example.com. Localhost and IPs keep a host-only cookie,
+// which already reaches every port.
+function sharedCookieDomain(env: AuthConfig) {
+  const host = new URL(env.CORS_ORIGIN).hostname;
+  if (host === "localhost" || /^\d+(\.\d+){3}$/.test(host)) return undefined;
+  const labels = host.split(".");
+  return labels.length > 2 ? labels.slice(1).join(".") : host;
+}
+
 export function createAuth(
   env: AuthConfig,
   database: Database,
   desktopOrigins: readonly string[] = [],
 ) {
+  const cookieDomain = sharedCookieDomain(env);
+
   return betterAuth({
     database: drizzleAdapter(database, {
       provider: "sqlite",
@@ -72,6 +85,7 @@ export function createAuth(
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
+      crossSubDomainCookies: cookieDomain ? { enabled: true, domain: cookieDomain } : undefined,
       defaultCookieAttributes: {
         sameSite: "none",
         secure: true,
