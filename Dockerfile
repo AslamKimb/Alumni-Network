@@ -27,6 +27,12 @@ COPY . .
 # Generates src/env.ts from .env.schema; that file is gitignored.
 RUN pnpm env:generate
 
+# next build inlines NEXT_PUBLIC_* into the browser bundle, so this value must
+# exist at build time: Dokploy > Environment > Build Time Arguments.
+ARG NEXT_PUBLIC_SERVER_URL
+ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
+RUN test -n "$NEXT_PUBLIC_SERVER_URL" || { echo "NEXT_PUBLIC_SERVER_URL is empty - set it under Environment > Build Time Arguments"; exit 1; }
+
 RUN pnpm --filter server build && pnpm --filter web build
 
 FROM node:22-bookworm-slim

@@ -42,7 +42,7 @@ Open `http://<VPS-IP>:3000` (this is the Dokploy panel, not the app) and create 
 
 ## 4. Environment tab
 
-Paste exactly this and change the four uppercase placeholders:
+**Environment** — paste exactly this and change the four uppercase placeholders:
 
 ```
 NODE_ENV=production
@@ -55,6 +55,14 @@ NEXT_PUBLIC_SERVER_URL=https://api.example.com
 ```
 
 This is the complete list — the same block goes to both servers, each one reads what it needs. Varlock validates it against the committed schemas at startup; a wrong value stops the container with a named error instead of half-booting.
+
+**Build Time Arguments** — same tab, the field below. One line, same value:
+
+```
+NEXT_PUBLIC_SERVER_URL=https://api.example.com
+```
+
+Why it appears twice: `next build` compiles every `NEXT_PUBLIC_*` value into the browser bundle, so it must exist while the image is built. The Environment copy is what startup validation reads. Change one, change the other.
 
 What each variable enforces, precedence rules, and failure messages: **[ENVIRONMENT.md](./ENVIRONMENT.md)**.
 
@@ -116,6 +124,7 @@ Push to `master`, click **Deploy** (or enable Auto Deploy in the General tab). A
 | `table 'account' already exists` at startup | Volume was filled by `drizzle-kit push` (dev flow), not migrate | Wipe the volume and let startup migrations create it |
 | Domain returns 404/502 | Added the domain but did not redeploy, or wrong port | Redeploy; check port `3001` for web, `3000` for api |
 | Login 401s on every request | `CORS_ORIGIN` does not exactly match the web origin | Set it to `https://app.example.com`, no trailing slash |
-| App calls `localhost:3000` | `NEXT_PUBLIC_SERVER_URL` missing from the Environment tab | Add it, deploy |
+| App calls `localhost:3000` | `NEXT_PUBLIC_SERVER_URL` missing from Build Time Arguments | Add it there, deploy |
+| Build fails: `NEXT_PUBLIC_SERVER_URL is empty` | Build Time Arguments not set | Add the line in §4, deploy |
 | `SQLITE_CANTOPEN` | Volume not mounted at `/data` | Re-check Advanced → Volumes |
 | Build dies with `commit failed: input/output error` | VPS out of disk | Free space, redeploy |
