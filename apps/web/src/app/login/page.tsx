@@ -18,14 +18,17 @@ function LoginInner() {
   const searchParams = useSearchParams();
   const publicAuth = useQuery(trpc.settings.publicAuth.queryOptions());
   const signupsOpen = publicAuth.data?.signupsOpen ?? true;
-  const { data: session } = authClient.useSession();
   const [showSignIn, setShowSignIn] = useState(() => searchParams.get("mode") === "signin");
   const [signInEmail, setSignInEmail] = useState<string | undefined>(undefined);
 
-  // A signed-in visitor has no business on the login form.
+  // A visitor who arrives signed in has no business on the login form. Checked
+  // once on mount, never reactively: a sign-up on this page creates a session,
+  // and reacting to that would race the form's own push to /onboarding.
   useEffect(() => {
-    if (session?.user) router.replace("/dashboard");
-  }, [session, router]);
+    authClient.getSession().then(({ data }) => {
+      if (data?.user) router.replace("/dashboard");
+    });
+  }, [router]);
 
   // Keep the visible form in sync when navigating between
   // /login?mode=signin and /login?mode=signup without a remount.

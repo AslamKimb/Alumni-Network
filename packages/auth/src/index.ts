@@ -85,6 +85,11 @@ export function createAuth(
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
+      // The prefix is part of the cookie name. Cookies from an older deploy
+      // (host-only, same name) are never read again, so they cannot shadow the
+      // live one: the cookie parser keeps the first duplicate it finds, and the
+      // browser sends the older cookie first.
+      cookiePrefix: "alumni",
       crossSubDomainCookies: cookieDomain ? { enabled: true, domain: cookieDomain } : undefined,
       defaultCookieAttributes: {
         sameSite: "none",
