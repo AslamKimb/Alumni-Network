@@ -43,6 +43,18 @@ export function makeTRPCClient() {
           return fetch(url, {
             ...options,
             credentials: "include",
+          }).then((response) => {
+            // A rejected session must not leave the page on a loading state.
+            // Never redirect from /login itself: its own public calls would
+            // trip the same check and the page would reload forever.
+            if (
+              response.status === 401 &&
+              typeof window !== "undefined" &&
+              window.location.pathname !== "/login"
+            ) {
+              window.location.assign("/login");
+            }
+            return response;
           });
         },
       }),

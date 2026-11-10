@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { Card, CardContent } from "@Alumni-Network/ui/components/card";
@@ -9,14 +9,23 @@ import { Skeleton } from "@Alumni-Network/ui/components/skeleton";
 
 import SignInForm from "@/components/sign-in-form";
 import SignUpForm from "@/components/sign-up-form";
+import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/utils/trpc";
 
 function LoginInner() {
   const trpc = useTRPC();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const publicAuth = useQuery(trpc.settings.publicAuth.queryOptions());
   const signupsOpen = publicAuth.data?.signupsOpen ?? true;
+  const { data: session } = authClient.useSession();
   const [showSignIn, setShowSignIn] = useState(() => searchParams.get("mode") === "signin");
+  const [signInEmail, setSignInEmail] = useState<string | undefined>(undefined);
+
+  // A signed-in visitor has no business on the login form.
+  useEffect(() => {
+    if (session?.user) router.replace("/dashboard");
+  }, [session, router]);
 
   // Keep the visible form in sync when navigating between
   // /login?mode=signin and /login?mode=signup without a remount.
@@ -55,9 +64,17 @@ function LoginInner() {
         <Card>
           <CardContent>
             {signingIn ? (
-              <SignInForm onSwitchToSignUp={signupsOpen ? () => setShowSignIn(false) : undefined} />
+              <SignInForm
+                onSwitchToSignUp={signupsOpen ? () => setShowSignIn(false) : undefined}
+                initialEmail={signInEmail}
+              />
             ) : (
-              <SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
+              <SignUpForm
+                onSwitchToSignIn={(email) => {
+                  setSignInEmail(email);
+                  setShowSignIn(true);
+                }}
+              />
             )}
           </CardContent>
         </Card>

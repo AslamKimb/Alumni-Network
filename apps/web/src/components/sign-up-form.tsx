@@ -11,7 +11,11 @@ import { authClient } from "@/lib/auth-client";
 
 import Loader from "./loader";
 
-export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
+export default function SignUpForm({
+  onSwitchToSignIn,
+}: {
+  onSwitchToSignIn: (email?: string) => void;
+}) {
   const router = useRouter();
   const { isPending } = authClient.useSession();
 
@@ -39,6 +43,11 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
+            // The address already has an account: hand them the sign-in form
+            // instead of leaving them on a sign-up form that cannot succeed.
+            if (error.error.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL") {
+              onSwitchToSignIn(value.email);
+            }
           },
         },
       );
@@ -221,7 +230,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
       </form>
 
       <div className="mt-4 text-center">
-        <Button variant="link" size="sm" onClick={onSwitchToSignIn}>
+        <Button variant="link" size="sm" onClick={() => onSwitchToSignIn()}>
           Already have an account? Sign In
         </Button>
       </div>

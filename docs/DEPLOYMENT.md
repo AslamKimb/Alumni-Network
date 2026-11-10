@@ -123,6 +123,7 @@ Push to `master`, click **Deploy** (or enable Auto Deploy in the General tab). A
 | --- | --- | --- |
 | Container restarts in a loop with `Value is required but is currently empty` | Missing variable in the Environment tab | Read the name in the log, add it, deploy |
 | Sign-up says `User already exists` | The startup seed already created that address | Sign in instead, with the `ADMIN_PASSWORD` value |
+| Page stuck on `Loading your record…`, console full of `401` | The browser holds a session cookie the API rejects (left over from an earlier deploy) | Clear the cookies for the domain, then sign in again |
 | `Invalid URL` in the logs | URL without `https://` | Add the scheme, deploy |
 | `[varlock] No .env files found in /app/apps/...` | Image built without `.env.schema` | Keep `apps/*/.env.schema` committed, rebuild |
 | `table 'account' already exists` at startup | Volume was filled by `drizzle-kit push` (dev flow), not migrate | Wipe the volume and let startup migrations create it |

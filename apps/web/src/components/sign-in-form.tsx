@@ -11,13 +11,19 @@ import { authClient } from "@/lib/auth-client";
 
 import Loader from "./loader";
 
-export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: () => void }) {
+export default function SignInForm({
+  onSwitchToSignUp,
+  initialEmail,
+}: {
+  onSwitchToSignUp?: () => void;
+  initialEmail?: string;
+}) {
   const router = useRouter();
   const { isPending } = authClient.useSession();
 
   const form = useForm({
     defaultValues: {
-      email: "",
+      email: initialEmail ?? "",
       password: "",
     },
     onSubmit: async ({ value }) => {
