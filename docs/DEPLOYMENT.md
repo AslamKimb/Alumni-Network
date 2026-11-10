@@ -51,8 +51,11 @@ BETTER_AUTH_URL=https://api.example.com
 CORS_ORIGIN=https://app.example.com
 DATABASE_URL=file:/data/alumni.db
 ADMIN_EMAILS=you@yourdomain.com
+ADMIN_PASSWORD=<pick a strong one>
 NEXT_PUBLIC_SERVER_URL=https://api.example.com
 ```
+
+At startup the container runs the migrations, then the admin seed: the first address in `ADMIN_EMAILS` is created if it does not exist, and its password is set to `ADMIN_PASSWORD` every time the container starts. Delete `ADMIN_PASSWORD` once you have changed your password in **Settings → Account**, or the next restart puts the old one back.
 
 This is the complete list — the same block goes to both servers, each one reads what it needs. Varlock validates it against the committed schemas at startup; a wrong value stops the container with a named error instead of half-booting.
 
@@ -60,7 +63,7 @@ This is the complete list — the same block goes to both servers, each one read
 
 No trailing slashes on any of the URLs. `CORS_ORIGIN` is compared against the browser's `Origin` header, which never ends in `/`, and better-auth appends paths to `BETTER_AUTH_URL` verbatim.
 
-Change `ADMIN_EMAILS` to a real address — the placeholder grants admin to nobody.
+`ADMIN_EMAILS` must be an address you control — that is the account you sign in with.
 
 What each variable enforces, precedence rules, and failure messages: **[ENVIRONMENT.md](./ENVIRONMENT.md)**.
 
@@ -88,12 +91,14 @@ This volume holds the SQLite database. Without it the data disappears on every d
 Click **Deploy** and watch the *Deployments* tab:
 
 1. Image build (~5 min first time, cached after).
-2. At startup the container runs the DB migrations, then starts both servers.
+2. At startup the container runs the DB migrations, seeds the `ADMIN_EMAILS` account, then starts both servers.
 3. Traefik issues the certificates — give it ~30 seconds after the deploy finishes.
 
 ## 8. First run
 
-Open `https://app.example.com` and sign up with the address from `ADMIN_EMAILS`. That account is granted admin on first login (only while no admin exists).
+Open `https://app.example.com/login` and sign in with the address from `ADMIN_EMAILS` and the password from `ADMIN_PASSWORD`. The container created that account during startup — do not sign up, it already exists.
+
+Then change the password in **Settings → Account** and delete `ADMIN_PASSWORD` from the Environment tab. While it stays, every restart resets the password to it.
 
 ## 9. Verify
 
@@ -117,6 +122,7 @@ Push to `master`, click **Deploy** (or enable Auto Deploy in the General tab). A
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | Container restarts in a loop with `Value is required but is currently empty` | Missing variable in the Environment tab | Read the name in the log, add it, deploy |
+| Sign-up says `User already exists` | The startup seed already created that address | Sign in instead, with the `ADMIN_PASSWORD` value |
 | `Invalid URL` in the logs | URL without `https://` | Add the scheme, deploy |
 | `[varlock] No .env files found in /app/apps/...` | Image built without `.env.schema` | Keep `apps/*/.env.schema` committed, rebuild |
 | `table 'account' already exists` at startup | Volume was filled by `drizzle-kit push` (dev flow), not migrate | Wipe the volume and let startup migrations create it |

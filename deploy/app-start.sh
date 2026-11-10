@@ -10,6 +10,10 @@ cd "$APPROOT"
 
 pnpm --filter @Alumni-Network/db db:migrate:deploy
 
+# Optional: creates ADMIN_EMAILS' first address and keeps its password equal to
+# ADMIN_PASSWORD. No-op when ADMIN_PASSWORD is unset.
+bun run "$APPROOT/packages/auth/scripts/seed-admin.ts"
+
 cd apps/server
 PORT=3000 bun run dist/index.mjs &
 API_PID=$!

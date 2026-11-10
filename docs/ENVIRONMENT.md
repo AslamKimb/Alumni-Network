@@ -182,6 +182,7 @@ BETTER_AUTH_URL=https://api.example.com
 CORS_ORIGIN=https://app.example.com
 DATABASE_URL=file:/data/alumni.db
 ADMIN_EMAILS=you@yourdomain.com
+ADMIN_PASSWORD=replace-with-a-strong-password
 NEXT_PUBLIC_SERVER_URL=https://api.example.com
 ```
 
@@ -191,6 +192,7 @@ Rules that bite if you ignore them:
 - **No trailing slash** on `BETTER_AUTH_URL`, `CORS_ORIGIN`, or `NEXT_PUBLIC_SERVER_URL`. The URL type accepts it, but the client appends `/trpc` and you get `//trpc`.
 - **`CORS_ORIGIN` is a single origin.** It is both the CORS allowlist and the only trusted Better Auth origin.
 - **`ADMIN_EMAILS` cannot be empty.** The schema requires a value, and an empty string fails validation before the app starts.
+- **`ADMIN_PASSWORD` is optional and not validated by varlock.** The startup seed (`packages/auth/scripts/seed-admin.ts`) reads it straight from the process environment. While it is set, every container start creates the first `ADMIN_EMAILS` address if missing and resets its password to this value. Remove it once you have changed the password in the app, or the next restart puts it back.
 - **`DATABASE_URL=file:/data/alumni.db`** is an absolute path inside the container. It only persists because `/data` is the `alumni-db` volume (see DEPLOYMENT.md).
 
 ### Build time vs runtime
@@ -199,11 +201,12 @@ Rules that bite if you ignore them:
 | --- | --- | --- |
 | `NEXT_PUBLIC_SERVER_URL` | `next build` inlines it into the client bundle | `apps/web/.env.production` (committed), and also as a normal env var so startup validation passes |
 | `NODE_ENV` | Build and boot | Environment tab; the Dockerfile sets `production` as a fallback |
-| `BETTER_AUTH_SECRET` | Boot | Environment tab → `${...}` in the `api` service |
-| `BETTER_AUTH_URL` | Boot | Environment tab → `${...}` in the `api` service |
-| `CORS_ORIGIN` | Boot | Environment tab → `${...}` in the `api` service |
-| `DATABASE_URL` | Boot | Environment tab → `${...}` in `api` and `migrate` |
-| `ADMIN_EMAILS` | Boot | Environment tab → `${...}` in the `api` service |
+| `BETTER_AUTH_SECRET` | Boot | Environment tab |
+| `BETTER_AUTH_URL` | Boot | Environment tab |
+| `CORS_ORIGIN` | Boot | Environment tab |
+| `DATABASE_URL` | Boot | Environment tab |
+| `ADMIN_EMAILS` | Boot | Environment tab |
+| `ADMIN_PASSWORD` | Startup seed, after migrations | Environment tab; optional |
 
 Changing a runtime variable needs a redeploy (container recreate). Changing `NEXT_PUBLIC_SERVER_URL` needs a **rebuild**, because the old value is already baked into the JavaScript the browser downloads. Setting it only at runtime is the most common way to ship a web app that still calls `localhost`.
 
