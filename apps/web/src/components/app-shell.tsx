@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import Footer from "./footer";
 import Header from "./header";
 import Sidebar from "./sidebar";
 
@@ -45,7 +46,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       />
       <div className="flex min-h-0 flex-1">
         <Sidebar open={open} onClose={close} collapsed={collapsed} />
-        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {children}
+          <Footer />
+        </div>
       </div>
     </div>
   );
