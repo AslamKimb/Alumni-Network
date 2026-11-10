@@ -1,4 +1,4 @@
-# Deploying Alumni Network on a VPS with Dokploy (Railpack)
+# Deploying Alumni Network on a VPS with Dokploy
 
 Two apps, one repo, one server. The web app (Next.js) talks straight to the API (Hono + tRPC) from the browser, so both need a public HTTPS domain. The database is a SQLite file on a Docker volume.
 
@@ -8,16 +8,34 @@ browser ──► https://app.example.com   (Next.js container, :3000)
    └──────► https://api.example.com   (Bun/Hono container, :3000) ──► /data/alumni.db (volume)
 ```
 
+## Pick a build path first
+
+Both paths deploy the same two apps to the same domains with the same environment. They differ only in how the image is produced.
+
+| Path | Use it when | Where |
+| --- | --- | --- |
+| **Railpack** (default) | You want zero build files and Dokploy to infer everything from the pnpm workspace | §4 → §6 |
+| **Dockerfile** | You want pinned base images and the exact same build locally, in CI, and on the VPS | **§11** |
+
+Sections 1–3 (server, install, project) are shared. Sections 7–10 and 12 (first run, verify, environment reference, backups, troubleshooting) apply to both paths.
+
+### Railpack settings, at a glance
+
 | Dokploy app | Source | Build | Start |
 | --- | --- | --- | --- |
 | `alumni-api` | repo root | `pnpm --filter server build` | `cd apps/server && bun run dist/index.mjs` |
 | `alumni-web` | repo root | `pnpm --filter web build` | `cd apps/web && node node_modules/next/dist/bin/next start -p 3000` |
 
-Both use build type **Railpack**. No Dockerfile is needed: Railpack detects the pnpm workspace from `pnpm-workspace.yaml`, installs all workspace packages, and installs Bun on its own because the API start command calls `bun`.
+Railpack detects the pnpm workspace from `pnpm-workspace.yaml`, installs all workspace packages, and installs Bun on its own because the API start command calls `bun`. Because both apps build from the repo root, each one reads its own Railpack config file through `RAILPACK_CONFIG_FILE` (see §4). Without that, both would run the root `build` script and build every app in every container.
 
-Because both apps build from the repo root, each one reads its own Railpack config file through `RAILPACK_CONFIG_FILE` (see §4). Without that, both would run the root `build` script and build every app in every container.
+### Dockerfile settings, at a glance
 
-Prefer a container image instead? Both apps also ship a Dockerfile — see §11.
+| Dokploy app | Dockerfile Path | Docker Context Path | Build Time Arguments |
+| --- | --- | --- | --- |
+| `alumni-api` | `apps/server/Dockerfile` | `.` | — |
+| `alumni-web` | `apps/web/Dockerfile` | `.` | `NEXT_PUBLIC_SERVER_URL=https://api.example.com` |
+
+Full walkthrough in **§11**. Skip the `RAILPACK_*` variables there; they do nothing with Dockerfiles.
 
 ---
 
@@ -181,7 +199,9 @@ If the login page calls `localhost:3000`, the web image was built without `NEXT_
 
 ## 9. Environment reference
 
-Both apps use [Varlock](https://varlock.dev). Each `.env.schema` file is committed and validated at boot; the values themselves only live in Dokploy. A missing or invalid value fails the container immediately with a `varlock` error — that is the validation working, not a crash to work around.
+Both apps use [Varlock](https://varlock.dev). Each `.env.schema` file is committed and validated at boot; the values themselves only live in Dokploy. A missing or invalid value fails the container immediately with a `varlock` error - that is the validation working, not a crash to work around.
+
+How the schemas, local files, precedence, build-time vs runtime values and the exact per-app paste blocks work: **[ENVIRONMENT.md](./ENVIRONMENT.md)**.
 
 | Variable | App | Required | Rule / notes |
 | --- | --- | --- | --- |
@@ -230,7 +250,7 @@ What the images do:
 - Web runtime `node:22-bookworm-slim`, `CMD next start -p 3000` in `apps/web`.
 - `.dockerignore` keeps host `node_modules`, `.git`, `.next`, `dist` and the local `.env` files out of the context, so a Windows checkout cannot poison the Linux build and no secret is baked into a layer.
 
-`--ignore-scripts` skips the root postinstall (varlock codegen) because the generated `src/env.ts` files are committed. Run `pnpm env:generate` and commit the result whenever a `.env.schema` changes.
+`--ignore-scripts` skips the root postinstall, because at install time the `.env.schema` files have not been copied yet. `RUN pnpm env:generate` right after `COPY . .` does that work instead: `src/env.ts` is gitignored, so it has to be generated inside the image before `next build` or `tsdown` can resolve `import { ENV } from "./env"`.
 
 Manual build, for reproducing a failure outside Dokploy:
 
@@ -244,6 +264,7 @@ docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SERVER_URL=https://a
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | Container exits with `[varlock] No .env files found` | `.env.schema` missing from the image | Keep `apps/*/.env.schema` committed; rebuild. |
+| `docker build` fails with `Cannot find module './env'` | `src/env.ts` was never generated in the image | Keep `RUN pnpm env:generate` after `COPY . .` in the Dockerfile. |
 | Container exits with a `varlock` validation error | A required variable is missing/empty/invalid | Fix the value in the Environment tab and redeploy. |
 | `EADDRINUSE` on boot | Another process in the container already bound the port | Confirm only one start command runs; check `deploy.startCommand` in the app's railpack config. |
 | Container starts the wrong app, or builds both apps | `RAILPACK_CONFIG_FILE` not set for that app | Set it to the matching file in `deploy/` and redeploy. |
