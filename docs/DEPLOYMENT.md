@@ -56,15 +56,11 @@ NEXT_PUBLIC_SERVER_URL=https://api.example.com
 
 This is the complete list — the same block goes to both servers, each one reads what it needs. Varlock validates it against the committed schemas at startup; a wrong value stops the container with a named error instead of half-booting.
 
-**Build-time Arguments** — same tab, the box under the Environment box. One line:
+**Build-time Arguments** — leave empty. The one build-time value, `NEXT_PUBLIC_SERVER_URL`, is committed in `apps/web/.env.production` because `next build` compiles it into the browser bundle. Nothing to paste, nothing to save.
 
-```
-NEXT_PUBLIC_SERVER_URL=https://api.example.com
-```
+No trailing slashes on any of the URLs. `CORS_ORIGIN` is compared against the browser's `Origin` header, which never ends in `/`, and better-auth appends paths to `BETTER_AUTH_URL` verbatim.
 
-Then click **Save** at the bottom of the card. One Save button stores all three boxes; deploying without it sends the old, empty value. This box only exists while Build Type is `Dockerfile`.
-
-Why twice: `next build` compiles every `NEXT_PUBLIC_*` value into the browser bundle, so it must exist while the image builds. The Environment copy is what startup validation reads. Change one, change the other.
+Change `ADMIN_EMAILS` to a real address — the placeholder grants admin to nobody.
 
 What each variable enforces, precedence rules, and failure messages: **[ENVIRONMENT.md](./ENVIRONMENT.md)**.
 
@@ -110,7 +106,7 @@ Open `https://app.example.com` and sign up with the address from `ADMIN_EMAILS`.
 
 ## 10. Updating
 
-Push to `master`, click **Deploy** (or enable Auto Deploy in the General tab). Any env-var change only needs a redeploy.
+Push to `master`, click **Deploy** (or enable Auto Deploy in the General tab). Any env-var change only needs a redeploy — except the API domain, which is baked into the browser bundle at build time: change `apps/web/.env.production` too, or the app keeps calling the old host.
 
 ## 11. Backups
 
@@ -126,7 +122,7 @@ Push to `master`, click **Deploy** (or enable Auto Deploy in the General tab). A
 | `table 'account' already exists` at startup | Volume was filled by `drizzle-kit push` (dev flow), not migrate | Wipe the volume and let startup migrations create it |
 | Domain returns 404/502 | Added the domain but did not redeploy, or wrong port | Redeploy; check port `3001` for web, `3000` for api |
 | Login 401s on every request | `CORS_ORIGIN` does not exactly match the web origin | Set it to `https://app.example.com`, no trailing slash |
-| App calls `localhost:3000` | `NEXT_PUBLIC_SERVER_URL` missing from Build Time Arguments | Add it there, deploy |
-| Build fails: `NEXT_PUBLIC_SERVER_URL is empty` | The **Build-time Arguments** box is empty, or was typed but never **Saved** | Add the line in §4, click Save, deploy |
+| App calls `localhost:3000` | Image was built before `apps/web/.env.production` was correct | Fix the file, push, redeploy |
+| Build fails: `NEXT_PUBLIC_SERVER_URL` is empty | `apps/web/.env.production` is missing or excluded by `.dockerignore` | Keep the file committed |
 | `SQLITE_CANTOPEN` | Volume not mounted at `/data` | Re-check Advanced → Volumes |
 | Build dies with `commit failed: input/output error` | VPS out of disk | Free space, redeploy |

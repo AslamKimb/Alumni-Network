@@ -197,7 +197,7 @@ Rules that bite if you ignore them:
 
 | Variable | When it is read | Where it is set |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SERVER_URL` | `next build` inlines it into the client bundle | Build Time Arguments (appears in the Environment tab once the Build Type is set to `Dockerfile`), and also as a normal env var so startup validation passes |
+| `NEXT_PUBLIC_SERVER_URL` | `next build` inlines it into the client bundle | `apps/web/.env.production` (committed), and also as a normal env var so startup validation passes |
 | `NODE_ENV` | Build and boot | Environment tab; the Dockerfile sets `production` as a fallback |
 | `BETTER_AUTH_SECRET` | Boot | Environment tab → `${...}` in the `api` service |
 | `BETTER_AUTH_URL` | Boot | Environment tab → `${...}` in the `api` service |
@@ -231,7 +231,7 @@ Each of these was reproduced locally.
 | `[varlock] No .env files found in <dir>` then `LibsqlError: URL_INVALID` | Running from a directory with no `.env.schema` | Run from the package directory, or ship the schema in the image |
 | Container restarts in a loop with a varlock error | Environment tab is missing a variable | Read the name in the log, add it, redeploy |
 | Value is in the Environment tab but the container still says it is empty | Not referenced by the container at all — never reached it | Confirm the name is spelled exactly as deployed (no spaces, no quotes) |
-| Web app calls `localhost:3000` in production | `NEXT_PUBLIC_SERVER_URL` set at runtime only | Set it as a build argument and rebuild |
+| Web app calls `localhost:3000` in production | `NEXT_PUBLIC_SERVER_URL` set at runtime only | It must be in `apps/web/.env.production` before the build, then rebuild |
 | Everyone logged out after a deploy | `BETTER_AUTH_SECRET` changed | Expected. Rotating the secret invalidates all sessions. |
 
 ## Secrets

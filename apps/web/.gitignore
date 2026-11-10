@@ -31,6 +31,8 @@
 # Environment & local files
 .env*
 !.env.example
+# Public build-time value, inlined into the browser bundle by `next build`.
+!.env.production
 .DS_Store
 *.pem
 *.local
